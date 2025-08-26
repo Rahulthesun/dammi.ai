@@ -1,9 +1,11 @@
 // routes/whatsapp.js
-const express = require('express');
-const axios = require('axios');
-const queryPinecone = require('../services/queryPinecone');
-const { generateAnswer } = require('../services/llmService');
+import express from 'express';
+import axios from 'axios';
+import queryPinecone from '../services/queryPinecone.js';
+import { generateAnswer } from '../services/llmService.js';
+
 const router = express.Router();
+
 
 // WhatsApp API configuration
 const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
@@ -161,4 +163,4 @@ async function sendMessage(to, text) {
   }
 }
 
-module.exports = router;
+export default router;

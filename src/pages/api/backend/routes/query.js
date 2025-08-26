@@ -1,7 +1,8 @@
 // routes/query.js
-const express = require('express');
-const queryPinecone = require('../services/queryPinecone');
-const { generateAnswer } = require('../services/llmService');
+import express from 'express';
+import queryPinecone from '../services/queryPinecone.js';
+import { generateAnswer } from '../services/llmService.js';
+
 const router = express.Router();
 
 /**
@@ -60,4 +61,4 @@ router.post('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,15 +1,16 @@
-const express = require('express');
-const multer = require('multer');//handles file upload
-const fs = require('fs');
-const path = require('path');
-const pdfParse = require('pdf-parse');//extract text from pdf
-const mammoth = require('mammoth');//extract text from docx
+import express from 'express';
+import multer from 'multer'; // handles file upload
+import fs from 'fs';
+import path from 'path';
+import pdfParse from 'pdf-parse'; // extract text from pdf
+import mammoth from 'mammoth'; // extract text from docx
 
 const router = express.Router();
 
 // Multer config (store file in memory)
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
+
 
 // Upload endpoint
 router.post('/', upload.single('file'), async (req, res) => {
@@ -47,4 +48,4 @@ router.post('/', upload.single('file'), async (req, res) => {
   
 });
 
-module.exports = router;
+export default router;

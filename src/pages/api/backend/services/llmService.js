@@ -1,7 +1,6 @@
 // services/llmService.js
-const Groq = require("groq-sdk");
-const dotenv = require("dotenv");
-dotenv.config();
+import Groq from 'groq-sdk';
+import dotenv from 'dotenv';dotenv.config();
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -53,4 +52,4 @@ Answer:`;
   }
 }
 
-module.exports = { generateAnswer };
+export {generateAnswer};

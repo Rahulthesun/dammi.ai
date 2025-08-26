@@ -38,4 +38,4 @@ async function queryPinecone(query, businessId, topK = 3) {
   return relevantChunks;
 }
 
-module.exports = queryPinecone;
+export {queryPinecone};
