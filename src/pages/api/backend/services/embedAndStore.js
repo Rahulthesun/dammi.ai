@@ -20,3 +20,4 @@ export async function embedAndStore({ content, metadata }) {
   const index = pinecone.index(process.env.PINECONE_INDEX_NAME) 
   await index.upsert([vector])
 }
+  export default embedAndStore;

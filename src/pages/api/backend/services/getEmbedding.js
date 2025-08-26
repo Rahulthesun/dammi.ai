@@ -30,3 +30,4 @@ export async function getEmbedding(text) {
     throw new Error('Failed to get embedding for user input.')
   }
 }
+export default getEmbedding;

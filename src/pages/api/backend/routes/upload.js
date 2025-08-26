@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import pdfParse from 'pdf-parse'; // extract text from pdf
 import mammoth from 'mammoth'; // extract text from docx
+import embedAndStoreChunks from '../services/embedAndStore.js';
 
 const router = express.Router();
 
@@ -32,7 +33,6 @@ router.post('/', upload.single('file'), async (req, res) => {
     } else {
       return res.status(400).json({ error: 'Unsupported file type' });
     }
-    const embedAndStoreChunks = require('../services/embedAndStore');
     await embedAndStoreChunks(extractedText,{
       businessId: 'demo-business',
       filename: file.originalname,

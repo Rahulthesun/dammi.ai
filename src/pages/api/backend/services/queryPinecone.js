@@ -1,12 +1,12 @@
 // services/queryPinecone.js
-const { Pinecone } = require("@pinecone-database/pinecone");
-const dotenv = require("dotenv");
-const getEmbedding = require("./getEmbedding");
+import { Pinecone } from "@pinecone-database/pinecone";
+import dotenv from "dotenv";
+import getEmbedding from "./getEmbedding.js";
+
 dotenv.config();
 
 const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
-  
 });
 
 const index = pinecone.Index(process.env.PINECONE_INDEX_NAME);
@@ -38,4 +38,4 @@ async function queryPinecone(query, businessId, topK = 3) {
   return relevantChunks;
 }
 
-export {queryPinecone};
+export default queryPinecone;
