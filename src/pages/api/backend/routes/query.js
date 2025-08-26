@@ -33,22 +33,34 @@ router.post('/', async (req, res) => {
       });
     }
 
-    //  context for LLM
-    const context = relevantChunks
+    // Filter out chunks without text and create context for LLM
+    const validChunks = relevantChunks.filter(chunk => chunk && chunk.text && typeof chunk.text === 'string');
+    
+    if (validChunks.length === 0) {
+      return res.json({
+        answer: "I found relevant documents but couldn't extract readable content. Please check your document format.",
+        sources: [],
+        confidence: 0
+      });
+    }
+
+    const context = validChunks
       .map((chunk, index) => `Context ${index + 1}:\n${chunk.text}`)
       .join('\n\n');
 
-    //  Generate answer using LLM
+    // Generate answer using LLM
     const answer = await generateAnswer(question, context);
 
     // Return structured response
     res.json({
       answer,
-      sources: relevantChunks.map(chunk => ({
-        text: chunk.text.substring(0, 200) + '...', // Truncate for response
+      sources: validChunks.map(chunk => ({
+        text: (chunk.text && chunk.text.length > 200) 
+          ? chunk.text.substring(0, 200) + '...' 
+          : chunk.text || 'No text available',
         score: chunk.score
       })),
-      confidence: relevantChunks[0]?.score || 0,
+      confidence: validChunks[0]?.score || 0,
       businessId
     });
 
