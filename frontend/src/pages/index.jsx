@@ -125,7 +125,7 @@ export default function Home() {
       const result = await response.json();
 
       if (response.ok) {
-        alert('Questionnaire submitted successfully!');
+        alert('Questionnaire submitted successfully!'); k
         setQuestionnaireData({});
       } else {
         alert(`Error: ${result.error}`);
@@ -231,7 +231,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 flex">
     {/* Sidebar */}
     <div className={`fixed inset-y-0 left-0 z-50 transition-all duration-300 ${
-      sidebarOpen ? 'w-72' : 'w-16'
+      sidebarOpen ? 'w-72' : 'w-20'
     } bg-white border-r border-gray-200 shadow-lg`}>
       
       {/* Header */}
@@ -251,7 +251,7 @@ export default function Home() {
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
         >
-          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 
@@ -264,13 +264,13 @@ export default function Home() {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-all duration-200 group ${
+                className={`w-full flex items-center ${sidebarOpen ? 'space-x-3 px-3' : 'justify-center px-2'} py-3 rounded-lg transition-all duration-200 group ${
                   activeTab === item.id
                     ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
                     : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
-                <IconComponent className={`${sidebarOpen ? 'w-5 h-5' : 'w-6 h-6'} ${
+                <IconComponent className={`${sidebarOpen ? 'w-5 h-5' : 'w-7 h-7'} ${
                   activeTab === item.id ? 'text-white' : 'text-gray-500 group-hover:text-gray-700'
                 }`} />
                 {sidebarOpen && (
@@ -297,11 +297,9 @@ export default function Home() {
             return (
               <button
                 key={item.id}
-                className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900 ${
-                  !sidebarOpen && 'justify-center'
-                }`}
+                className={`w-full flex items-center ${sidebarOpen ? 'space-x-3 px-3' : 'justify-center px-2'} py-2 rounded-lg transition-all duration-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900`}
               >
-                <IconComponent className={`${sidebarOpen ? 'w-5 h-5' : 'w-6 h-6'} text-gray-500`} />
+                <IconComponent className={`${sidebarOpen ? 'w-5 h-5' : 'w-7 h-7'} text-gray-500`} />
                 {sidebarOpen && <span className="font-medium">{item.label}</span>}
               </button>
             );
@@ -312,7 +310,7 @@ export default function Home() {
 
     {/* Main Content */}
     <div className={`flex-1 transition-all duration-300 ${
-      sidebarOpen ? 'ml-72' : 'ml-16'
+      sidebarOpen ? 'ml-72' : 'ml-20'
     }`}>
       
       {/* Top Bar */}
@@ -416,7 +414,7 @@ export default function Home() {
                     <div className={`inline-block max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                       msg.sender === 'user' 
                         ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white' 
-                        : 'bg-white border border-gray-200 shadow-sm'
+                        : 'bg-white border border-gray-200 shadow-sm text-black'
                     }`}>
                       <p className="text-sm">{msg.message}</p>
                       {msg.sources && msg.sources.length > 0 && (

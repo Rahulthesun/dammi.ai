@@ -1,13 +1,10 @@
 // routes/widget.js
 import express from 'express';
 import { verifyWidgetToken } from '../utils/tokenUtils.js';
+import { isDomainAllowed } from '../utils/isDomainAllowed.js';
 const router = express.Router();
 
-// Hardcoded map of businessId need to replace with db
-const allowedDomainsMap = {
-  'abc123': ['https://example.com', 'http://localhost:3000'],
-  'xyz456': ['https://another.com']
-};
+// Domain validation is now handled by the isDomainAllowed function
 
 router.get('/widget.js', async (req, res) => {
   const token = req.query.token;
@@ -25,8 +22,7 @@ router.get('/widget.js', async (req, res) => {
     return res.status(401).send('// Invalid or expired token');
   }
 
-  await isDomainAllowed(businessId, origin); 
-  const isAllowed = allowedDomains.some(domain => referer.startsWith(domain));
+  const isAllowed = await isDomainAllowed(businessId, origin);
 
   if (!isAllowed) {
     return res.status(403).send('// Domain not allowed for this business');
