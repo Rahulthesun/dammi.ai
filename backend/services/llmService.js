@@ -39,7 +39,7 @@ Answer:`;
           content: prompt,
         },
       ],
-      model: "llama3-8b-8192", // Fast and good quality
+      model: "llama-3.1-8b-instant", // Fast and good quality
       temperature: 0.1, // Low temperature for factual responses
       max_tokens: 300,
     });
