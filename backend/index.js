@@ -22,6 +22,7 @@ import submitQuestionnaire from './routes/submitQuestionnaire.js';
 import uploadRoutes from './routes/upload.js';
 import queryRoute from './routes/query.js';
 import whatsappRoute from './routes/whatsapp.js';
+import generateTokenRoute from './routes/generateToken.js';
 
 // Register routes
 app.use('/', widgetRoute);
@@ -29,6 +30,7 @@ app.use('/api/submit-questionnaire', submitQuestionnaire);
 app.use('/api/upload', uploadRoutes);
 app.use('/query', queryRoute);
 app.use('/whatsapp', whatsappRoute);
+app.use('/api', generateTokenRoute);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -41,6 +43,7 @@ app.listen(PORT, () => {
   console.log(`📋 Available endpoints:`);
   console.log(`   POST /api/upload - Upload documents`);
   console.log(`   POST /query - Query documents`);
+  console.log(`   POST /api/generate-token - Generate widget token`);
   console.log(`   GET /whatsapp/webhook - Webhook verification`);
   console.log(`   POST /whatsapp/webhook - Handle WhatsApp messages`);
   console.log(`   POST /api/submit-questionnaire - Submit questionnaire`);
