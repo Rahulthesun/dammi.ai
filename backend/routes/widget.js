@@ -10,6 +10,9 @@ router.get('/widget.js', async (req, res) => {
   const token = req.query.token;
   const referer = req.get('referer') || '';
   const origin = req.headers.origin;
+  console.log('[widget.js] Token:', token);
+  console.log('[widget.js] Origin:', origin);
+  console.log('[widget.js] Referer:', referer);
 
   if (!token) {
     return res.status(400).send('// Missing token');
