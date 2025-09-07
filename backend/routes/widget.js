@@ -9,8 +9,16 @@ const router = express.Router();
 router.get('/widget.js', async (req, res) => {
   const token = req.query.token;
   const referer = req.get('referer') || '';
-  const origin = req.headers.origin;
-
+  let derivedOrigin;
+  try {
+    if (referer) {
+      derivedOrigin = new URL(referer).origin;
+    }
+  } catch (_) {
+    // ignore invalid referer
+  }
+  const origin = req.headers.origin || derivedOrigin;
+console.log('[widget.js] Incoming origin:', origin);
   if (!token) {
     return res.status(400).send('// Missing token');
   }

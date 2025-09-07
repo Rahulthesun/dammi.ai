@@ -3,6 +3,9 @@ import { supabase } from '../lib/supabaseClient.js';
 
 export async function isDomainAllowed(businessId, origin) {
   try {
+    if (!origin) {
+      return false;
+    }
     const { data, error } = await supabase
       .from('widget_domains')
       .select('domain')
@@ -13,7 +16,12 @@ export async function isDomainAllowed(businessId, origin) {
       return false;
     }
 
-    const originHost = new URL(origin).hostname.toLowerCase();
+    let originHost = '';
+    try {
+      originHost = new URL(origin).hostname.toLowerCase();
+    } catch (_) {
+      return false;
+    }
     const allowedDomains = data.map(row => row.domain.toLowerCase());
 
     return allowedDomains.includes(originHost);
