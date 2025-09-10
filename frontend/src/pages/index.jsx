@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Upload, MessageCircle, FileText, Menu, X, Settings, HelpCircle, LogOut, Monitor } from 'lucide-react';
 
+
+
+
 export default function Home() {
+  const [widgetToken, setWidgetToken] = useState(null);
   const [activeTab, setActiveTab] = useState('upload');
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [chatMessages, setChatMessages] = useState([]);
@@ -20,6 +24,30 @@ export default function Home() {
       }
     ]);
   }, []);
+
+
+  useEffect(() => {
+  const fetchToken = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/generate-widget-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setWidgetToken(data.token);
+      } else {
+        console.error('Token fetch error:', data.error);
+      }
+    } catch (err) {
+      console.error('Failed to fetch widget token:', err);
+    }
+  };
+
+  if (businessId) fetchToken();
+}, [businessId]);
+
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -555,7 +583,9 @@ export default function Home() {
                   Add this code to your website to embed the Dammi AI chat widget:
                 </p>
                 <div className="bg-gray-800 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
-                  {`<script src="${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/widget.js?token=your-token-here"></script>`}
+                  {widgetToken 
+  ? `<script src="${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/widget.js?token=${widgetToken}"></script>` 
+  : 'Loading token...'}
                 </div>
               </div>
 

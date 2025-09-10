@@ -33,10 +33,11 @@ console.log('[widget.js] Incoming origin:', origin);
   const isAllowed = await isDomainAllowed(businessId, origin);
 
   if (!isAllowed) {
+    console.log("domain not allowed")
     return res.status(403).send('// Domain not allowed for this business');
   }
 
-  res.set('Content-Type', 'application/javascript');
+  res.set('Content-Type', 'application/javascript; charset=utf-8');
 
   // Get the current host for API calls (works in dev and production)
   const protocol = req.protocol;
@@ -50,7 +51,7 @@ console.log('[widget.js] Incoming origin:', origin);
 
       const bubble = document.createElement('div');
       bubble.style = "position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: #1E90FF; color: white; font-size: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; z-index: 9999; box-shadow: 0 4px 12px rgba(30, 144, 255, 0.3); transition: transform 0.2s ease;";
-      bubble.innerText = '💬';
+      bubble.innerHTML = '💬';  // Changed from innerText to innerHTML for better emoji support
       bubble.onmouseenter = () => bubble.style.transform = 'scale(1.1)';
       bubble.onmouseleave = () => bubble.style.transform = 'scale(1)';
       document.body.appendChild(bubble);
@@ -114,10 +115,10 @@ console.log('[widget.js] Incoming origin:', origin);
             }
             
             const data = await res.json();
-            addMessage('Dammi', data.answer || 'Sorry, I couldn\'t process your request.');
+            addMessage('Dammi', data.answer || 'Sorry, I couldn\\'t process your request.');
           } catch (err) {
             console.error('Dammi widget error:', err);
-            addMessage('Dammi', 'Sorry, I\'m having trouble connecting right now. Please try again.', true);
+            addMessage('Dammi', 'Sorry, I\\'m having trouble connecting right now. Please try again.', true);
           }
 
           input.disabled = false;
@@ -127,7 +128,7 @@ console.log('[widget.js] Incoming origin:', origin);
 
       // Add initial welcome message
       setTimeout(() => {
-        addMessage('Dammi', 'Hi! I\'m here to help. What can I assist you with today?');
+        addMessage('Dammi', 'Hi! I\\'m here to help. What can I assist you with today?');
       }, 500);
     })();
   `);
