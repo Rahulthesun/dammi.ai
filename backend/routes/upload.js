@@ -38,7 +38,7 @@ router.post('/', upload.single('file'), async (req, res) => {
     await embedAndStore({
       content: extractedText,
       metadata: {
-        businessId: 'demo-business',
+        businessId: 'a4823868-b57d-4f27-b715-a1b93ce8308d',
         filename: file.originalname,
         sectionTitle: file.originalname // Added required sectionTitle
       }

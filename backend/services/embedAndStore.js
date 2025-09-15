@@ -11,11 +11,13 @@ const pinecone = new Pinecone({
 export async function embedAndStore({ content, metadata }) {
   const embedding = await getEmbedding(content)
 
+
   const vector = {
     id: `${metadata.businessId}-${metadata.sectionTitle}`.toLowerCase().replace(/\s+/g, '-'),
     values: embedding,
     metadata
   }
+  console.log(vector)
 
   const index = pinecone.index(process.env.PINECONE_INDEX_NAME) 
   await index.upsert([vector])

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Dammi AI Widget Debug Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { 
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; 
+      padding: 24px; 
+      line-height: 1.6;
+    }
+    code { 
+      background: #f4f4f5; 
+      padding: 2px 6px; 
+      border-radius: 4px; 
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    }
+    .status {
+      padding: 12px;
+      border-radius: 6px;
+      margin: 12px 0;
+      font-weight: 500;
+    }
+    .status.loading { background: #fef3c7; color: #92400e; }
+    .status.success { background: #d1fae5; color: #065f46; }
+    .status.error { background: #fee2e2; color: #991b1b; }
+    .debug-info {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 16px 0;
+    }
+    .checklist {
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      padding: 16px;
+      margin: 16px 0;
+    }
+    .checklist h3 {
+      margin-top: 0;
+      color: #92400e;
+    }
+    .test-buttons {
+      margin: 20px 0;
+    }
+    .btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    .btn:hover {
+      background: #2563eb;
+    }
+    .log-container {
+      background: #1f2937;
+      color: #f9fafb;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 14px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin: 16px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔧 Dammi AI Widget Debug Test</h1>
+  
+  <div id="status" class="status loading">
+    📡 Loading widget...
+  </div>
+
+  <div class="checklist">
+    <h3>🔍 Troubleshooting Checklist</h3>
+    <div id="checks">
+      <div>⏳ Checking server connection...</div>
+    </div>
+  </div>
+
+  <div class="test-buttons">
+    <button class="btn" onclick="testConnection()">🌐 Test Server Connection</button>
+    <button class="btn" onclick="validateToken()">🔑 Validate Token</button>
+    <button class="btn" onclick="checkCORS()">🔒 Check CORS</button>
+    <button class="btn" onclick="clearLogs()">🗑️ Clear Logs</button>
+  </div>
+
+  <div class="debug-info">
+    <h3>📊 Debug Information</h3>
+    <div id="debug-content">
+      <p><strong>Current URL:</strong> <code id="current-url"></code></p>
+      <p><strong>Widget Script URL:</strong> <code id="script-url"></code></p>
+      <p><strong>Token:</strong> <code id="token-display"></code></p>
+      <p><strong>Browser:</strong> <code id="browser-info"></code></p>
+    </div>
+  </div>
+
+  <div>
+    <h3>📝 Console Logs</h3>
+    <div id="logs" class="log-container">
+      <div>Console logs will appear here...</div>
+    </div>
+  </div>
+
+  <script>
+    // Configuration
+    const WIDGET_SERVER = 'http://localhost:5000';
+    const TOKEN = 'YTQ4MjM4NjgtYjU3ZC00ZjI3LWI3MTUtYTFiOTNjZTgzMDhk.2c8269442e2341cb0ca9ea986543a2aeff05e53f4b0a2fdc72b3d3537ef9be77';
+    const SCRIPT_URL = `${WIDGET_SERVER}/widget.js?token=${TOKEN}`;
+
+    // Initialize debug info
+    function initDebugInfo() {
+      document.getElementById('current-url').textContent = window.location.href;
+      document.getElementById('script-url').textContent = SCRIPT_URL;
+      document.getElementById('token-display').textContent = TOKEN.substring(0, 20) + '...';
+      document.getElementById('browser-info').textContent = navigator.userAgent.split(' ').slice(-2).join(' ');
+    }
+
+    // Logging system
+    function addLog(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const logContainer = document.getElementById('logs');
+      const logEntry = document.createElement('div');
+      const color = type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#60a5fa';
+      logEntry.innerHTML = `<span style="color: #9ca3af;">[${timestamp}]</span> <span style="color: ${color};">${message}</span>`;
+      logContainer.appendChild(logEntry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    function clearLogs() {
+      document.getElementById('logs').innerHTML = '<div>Console logs cleared...</div>';
+    }
+
+    // Status updates
+    function updateStatus(message, type) {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = message;
+      statusEl.className = `status ${type}`;
+    }
+
+    function updateChecks(checks) {
+      const checksEl = document.getElementById('checks');
+      checksEl.innerHTML = checks.map(check => 
+        `<div>${check.icon} ${check.text}</div>`
+      ).join('');
+    }
+
+    // Test functions
+    async function testConnection() {
+      addLog('Testing connection to ' + WIDGET_SERVER, 'info');
+      try {
+        const response = await fetch(WIDGET_SERVER + '/health', { mode: 'no-cors' });
+        addLog('Server responded (note: no-cors mode used)', 'success');
+      } catch (error) {
+        addLog('Connection failed: ' + error.message, 'error');
+      }
+    }
+
+    function validateToken() {
+      addLog('Validating token format...', 'info');
+      const parts = TOKEN.split('.');
+      if (parts.length === 2) {
+        addLog('Token format appears valid (2 parts separated by dot)', 'success');
+      } else {
+        addLog('Invalid token format (should be 2 parts separated by dot)', 'error');
+      }
+    }
+
+    async function checkCORS() {
+      addLog('Checking CORS configuration...', 'info');
+      try {
+        const response = await fetch(SCRIPT_URL);
+        if (response.ok) {
+          addLog('CORS check passed - script accessible', 'success');
+        } else {
+          addLog(`CORS check failed - HTTP ${response.status}`, 'error');
+        }
+      } catch (error) {
+        addLog('CORS error: ' + error.message, 'error');
+      }
+    }
+
+    // Widget loading with enhanced error handling
+    function loadWidget() {
+      const script = document.createElement('script');
+      script.src = SCRIPT_URL;
+      
+      script.onload = function() {
+        addLog('Widget script loaded successfully', 'success');
+        updateStatus('✅ Widget loaded successfully', 'success');
+        
+        // Check if widget initialized
+        setTimeout(() => {
+          const widget = document.querySelector('.dammi-widget') || 
+                        document.querySelector('[class*="widget"]') ||
+                        document.querySelector('.chat-bubble');
+          
+          if (widget) {
+            addLog('Widget element found in DOM', 'success');
+            updateChecks([
+              { icon: '✅', text: 'Server connection established' },
+              { icon: '✅', text: 'Script loaded successfully' },
+              { icon: '✅', text: 'Widget initialized' },
+              { icon: '✅', text: 'Chat bubble should be visible' }
+            ]);
+          } else {
+            addLog('Widget script loaded but no widget element found', 'error');
+            updateChecks([
+              { icon: '✅', text: 'Server connection established' },
+              { icon: '✅', text: 'Script loaded successfully' },
+              { icon: '❌', text: 'Widget not initialized - check console for errors' },
+              { icon: '❌', text: 'Domain may not be in allowed list' }
+            ]);
+          }
+        }, 2000);
+      };
+      
+      script.onerror = function(error) {
+        addLog('Failed to load widget script: ' + error.message, 'error');
+        updateStatus('❌ Failed to load widget', 'error');
+        updateChecks([
+          { icon: '❌', text: 'Server connection failed' },
+          { icon: '❌', text: 'Script loading failed' },
+          { icon: '⚠️', text: 'Check if localhost:5000 is running' },
+          { icon: '⚠️', text: 'Check CORS configuration' }
+        ]);
+      };
+      
+      document.head.appendChild(script);
+      addLog('Attempting to load widget from: ' + SCRIPT_URL, 'info');
+    }
+
+    // Override console methods to capture logs
+    const originalConsole = {
+      log: console.log,
+      error: console.error,
+      warn: console.warn
+    };
+
+    console.log = function(...args) {
+      originalConsole.log.apply(console, args);
+      addLog('LOG: ' + args.join(' '), 'info');
+    };
+
+    console.error = function(...args) {
+      originalConsole.error.apply(console, args);
+      addLog('ERROR: ' + args.join(' '), 'error');
+    };
+
+    console.warn = function(...args) {
+      originalConsole.warn.apply(console, args);
+      addLog('WARN: ' + args.join(' '), 'info');
+    };
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      initDebugInfo();
+      loadWidget();
+      
+      // Additional checks
+      setTimeout(() => {
+        addLog('Page fully loaded, running additional checks...', 'info');
+        
+        // Check for common issues
+        if (window.location.protocol === 'file:') {
+          addLog('WARNING: Running from file:// - this may cause CORS issues', 'error');
+        }
+        
+        if (window.location.hostname !== 'localhost' && !window.location.hostname.includes('.')) {
+          addLog('WARNING: Domain may not be in allowed list', 'error');
+        }
+      }, 1000);
+    });
+  </script>
+</body>
+</html>

@@ -24,6 +24,7 @@ import uploadRoutes from './routes/upload.js';
 import queryRoute from './routes/query.js';
 import whatsappRoute from './routes/whatsapp.js';
 import generateTokenRouter from './routes/generateWidgetToken.js';
+import widgetDomainRoute from './routes/widgetDomain.js';
 
 
 // Register routes
@@ -33,6 +34,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/query', queryRoute);
 app.use('/whatsapp', whatsappRoute);
 app.use('/generate-widget-token', generateTokenRouter);
+app.use('/api/widget-domain', widgetDomainRoute);
 
 // Health check
 app.get('/health', (req, res) => {
