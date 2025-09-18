@@ -14,8 +14,7 @@ export default function DammiDashboard() {
   const [allowedDomain, setAllowedDomain] = useState("");
   const [saving, setSaving] = useState(false);
   
-  // Mock API base URL for demo purposes
-  const API_BASE_URL = 'https://api.dammi.ai'; // Replace with your actual API URL
+  const API_BASE_URL = "http://localhost:5000"; // Your actual API URL
   
   const updateDomain = async () => {
     if (!allowedDomain) {
@@ -25,8 +24,18 @@ export default function DammiDashboard() {
     try {
       setSaving(true);
       
-      // Mock API call - replace with actual implementation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(`${API_BASE_URL}/api/widget-domain`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // 'Authorization': `Bearer YOUR_AUTH_TOKEN` // Add auth if needed
+        },
+        body: JSON.stringify({ businessId, domain: allowedDomain }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update domain');
+      }
       
       alert("Domain updated ✅");
     } catch (err) {
@@ -38,23 +47,34 @@ export default function DammiDashboard() {
   };
 
   useEffect(() => {
-    const fetchToken = async () => {
-      try {
-        setLoading(true);
-        
-        // Mock token generation - replace with actual API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const mockToken = 'demo-token-' + Math.random().toString(36).substr(2, 9);
-        setWidgetToken(mockToken);
-      } catch (err) {
-        console.error('Failed to fetch widget token:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchToken = async () => {
+    try {
+      setLoading(true);
 
-    if (businessId) fetchToken();
-  }, [businessId]);
+      const response = await fetch(`${API_BASE_URL}/generate-widget-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      setWidgetToken(data.token);
+
+    } catch (err) {
+      console.error('Failed to fetch widget token:', err);
+      setWidgetToken(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (businessId) fetchToken();
+}, [businessId]);
+
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -62,23 +82,34 @@ export default function DammiDashboard() {
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('businessId', businessId);
 
     try {
-      // Mock file upload - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await fetch(`${API_BASE_URL}/api/upload`, {
+        method: 'POST',
+        // Headers are set automatically for FormData
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Upload failed');
+      }
+
+      const result = await response.json();
       
       setUploadedFiles(prev => [...prev, {
         name: file.name,
         size: file.size,
         status: 'success',
-        message: 'File uploaded successfully'
+        message: result.message || 'File uploaded successfully'
       }]);
     } catch (error) {
       setUploadedFiles(prev => [...prev, {
         name: file.name,
         size: file.size,
         status: 'error',
-        message: 'Upload failed'
+        message: error.message || 'Upload failed'
       }]);
     }
   };
@@ -94,18 +125,31 @@ export default function DammiDashboard() {
     setChatMessages(prev => [...prev, userMessage]);
 
     try {
-      // Mock AI response - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      const response = await fetch(`${API_BASE_URL}/query`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question,
+          businessId,
+          topK,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get AI response');
+      }
+      const aiData = await response.json();
       const aiMessage = {
-        sender: 'ai',
-        message: `This is a demo response to: "${question}". In a real implementation, this would be powered by your AI backend.`,
-        sources: [
-          { text: 'Sample source document', score: 0.95 },
-          { text: 'Another relevant document', score: 0.87 }
-        ]
-      };
-      setChatMessages(prev => [...prev, aiMessage]);
+      sender: 'ai',
+      message: aiData.answer || 'No response from AI',
+      sources: aiData.sources || []
+    };
+
+      
+      setChatMessages(prev => [...prev, { sender: 'ai', ...aiMessage }]);
+
     } catch (error) {
       const errorMessage = {
         sender: 'ai',
@@ -118,11 +162,21 @@ export default function DammiDashboard() {
 
   const handleQuestionnaireSubmit = async (data) => {
     try {
-      // Mock questionnaire submission - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(`${API_BASE_URL}/api/submit-questionnaire`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Submission failed');
+      }
       
       alert('Questionnaire submitted successfully!');
-      setQuestionnaireData({});
+      setQuestionnaireData({}); // Clear form on success
     } catch (error) {
       alert(`Error: ${error.message}`);
     }
