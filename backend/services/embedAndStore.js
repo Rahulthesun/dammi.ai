@@ -15,7 +15,10 @@ export async function embedAndStore({ content, metadata }) {
   const vector = {
     id: `${metadata.businessId}-${metadata.sectionTitle}`.toLowerCase().replace(/\s+/g, '-'),
     values: embedding,
-    metadata
+    metadata: {
+      ...metadata,
+      text: content  
+    }
   }
   console.log(vector)
 

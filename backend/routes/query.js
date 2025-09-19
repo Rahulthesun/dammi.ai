@@ -34,6 +34,7 @@ router.post('/', async (req, res) => {
     }
 
     // Filter out chunks without text and create context for LLM
+    console.log(relevantChunks);
     const validChunks = relevantChunks.filter(chunk => chunk && chunk.text && typeof chunk.text === 'string');
     
     if (validChunks.length === 0) {
