@@ -14,7 +14,7 @@ export default function DammiDashboard() {
   const [allowedDomain, setAllowedDomain] = useState("");
   const [saving, setSaving] = useState(false);
   
-  const API_BASE_URL = "http://localhost:5000"; // Your actual API URL
+  const API_BASE_URL = "https://damii-ai.fly.dev"; // Your actual API URL
   
   const updateDomain = async () => {
     if (!allowedDomain) {
