@@ -1,20 +1,49 @@
 import { useState, useEffect } from 'react';
 import { Upload, MessageCircle, FileText, Menu, X, Settings, HelpCircle, LogOut, Monitor, Loader2 } from 'lucide-react';
 
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 export default function DammiDashboard() {
   const [widgetToken, setWidgetToken] = useState(null);
   const [activeTab, setActiveTab] = useState('upload');
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [chatMessages, setChatMessages] = useState([]);
   const [questionnaireData, setQuestionnaireData] = useState({});
-  const [businessId, setBusinessId] = useState('a4823868-b57d-4f27-b715-a1b93ce8308d');
+  const [businessId, setBusinessId] = useState(null);
   const [topK, setTopK] = useState(3);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [allowedDomain, setAllowedDomain] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const API_BASE_URL=process.env.NEXT_PUBLIC_API_BASE_URL
   
-  const API_BASE_URL = "https://damii-ai.fly.dev"; // Your actual API URL
+  //const API_BASE_URL = "https://damii-ai.fly.dev"; // Your actual API URL
+
+  useEffect(() => {
+    const fetchBusinessId = async () => {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+
+        if (user && user.id) {
+          setBusinessId(user.id); // id itself is the businessId
+          console.log("business id is" ,businessId)
+          console.log("Fetched Business ID:", user.id);
+        } else {
+          console.warn("No user logged in. Please log in first.");
+        }
+      } catch (error) {
+        console.error("Error fetching businessId:", error.message);
+      }
+    };
+
+    fetchBusinessId();
+  }, []);
   
   const updateDomain = async () => {
     if (!allowedDomain) {
@@ -586,7 +615,7 @@ function QuestionnaireForm({ data, onChange, onSubmit }) {
         
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Business ID</label>
-          <input
+          <inputx
             type="text"
             value={data.businessId || 'demo-business'}
             onChange={(e) => handleFieldChange('businessId', e.target.value)}

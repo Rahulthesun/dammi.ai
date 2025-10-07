@@ -1,7 +1,7 @@
 // routes/scrapeWebsite.js
 import express from "express";
 import puppeteer from "puppeteer";
-import embedAndStore from "../utils/embedAndStore.js"; // adjust path if needed
+import embedAndStore from "../services/embedAndStore.js"; // adjust path if needed
 
 const router = express.Router();
 
