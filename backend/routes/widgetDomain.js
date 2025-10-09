@@ -13,6 +13,11 @@ router.post('/update-domain', async (req, res) => {
       return res.status(400).json({ error: 'Missing businessId or newDomain' });
     }
 
+    console.log(`Updating domain for businessId: ${businessId} to newDomain: ${newDomain}`);
+
+    const {user} = await supabase.auth.getUser(
+      id = user_id
+    );
     // Upsert domain for this business
     const { data, error } = await supabase
       .from('widget_domains')
@@ -23,6 +28,7 @@ router.post('/update-domain', async (req, res) => {
       .select();
 
     if (error) throw error;
+    console.log(data);
 
     res.json({ message: '✅ Domain updated successfully', data });
   } catch (err) {

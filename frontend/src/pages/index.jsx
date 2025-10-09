@@ -13,8 +13,9 @@ export default function DammiDashboard() {
   const [loading, setLoading] = useState(false);
   const [allowedDomain, setAllowedDomain] = useState("");
   const [saving, setSaving] = useState(false);
-  
-  const API_BASE_URL = "https://damii-ai.fly.dev"; // Your actual API URL
+  const [url, setUrl] = useState(""); // Setting Website LInk of the client for scraping data
+
+  const API_BASE_URL ="https://dammi-ai-v1.fly.dev"; // Your actual API URL
   
   const updateDomain = async () => {
     if (!allowedDomain) {
@@ -23,7 +24,7 @@ export default function DammiDashboard() {
     }
     try {
       setSaving(true);
-      
+      console.log(`${API_BASE_URL}`);
       const response = await fetch(`${API_BASE_URL}/api/widget-domain`, {
         method: 'POST',
         headers: {
@@ -32,7 +33,7 @@ export default function DammiDashboard() {
         },
         body: JSON.stringify({ businessId, domain: allowedDomain }),
       });
-
+      console.log(response);
       if (!response.ok) {
         throw new Error('Failed to update domain');
       }
@@ -73,6 +74,7 @@ export default function DammiDashboard() {
   };
 
   if (businessId) fetchToken();
+  console.log(businessId);
 }, [businessId]);
 
 
@@ -113,6 +115,29 @@ export default function DammiDashboard() {
       }]);
     }
   };
+
+  const handleDataScraping = async (url) => { 
+  try {
+    const response = await fetch("http://localhost:5000/api/scrape-website", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",  // <-- tell server it's JSON
+      },
+      body: JSON.stringify({ url, businessId }), // make sure property name matches backend
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to get Server Response from Website");
+    }
+
+    const data = await response.json();
+    console.log("Scraping result:", data);
+
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    alert("Failed to fetch data from the website. Please try again.");
+  }
+};
 
   const handleQuery = async (question) => {
     if (!question.trim()) return;
@@ -269,6 +294,7 @@ export default function DammiDashboard() {
       role: questionnaireData.role || '',
       businessId: questionnaireData.businessId || 'demo-business',
       responses: {
+        website_link: questionnaireData.website_link || '',
         company_info: questionnaireData.company_info || '',
         products_services: questionnaireData.products_services || '',
         target_audience: questionnaireData.target_audience || '',
@@ -392,6 +418,18 @@ export default function DammiDashboard() {
             {/* Upload Tab */}
             {activeTab === 'upload' && (
               <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2 text-black">Fetch Data from  Your Website </h3>        
+                  <input
+                    type='url'
+                    value = {url}
+                    onChange={(e)=> setUrl(e.target.value)}
+                    placeholder='Your Website Link'
+                    className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black placeholder-gray-500'
+                  />             
+                  <button onClick={() => handleDataScraping(url)} className='mt-3 px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-sm'>Fetch Data</button>
+                </div>
+
                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors">
                   <input
                     type="file"
@@ -554,6 +592,8 @@ function ChatInput({ onSendMessage }) {
   );
 }
 
+
+
 // Separate component for questionnaire form
 function QuestionnaireForm({ data, onChange, onSubmit }) {
   const handleFieldChange = (field, value) => {
@@ -600,6 +640,16 @@ function QuestionnaireForm({ data, onChange, onSubmit }) {
             rows="3"
             value={data.company_info || ''}
             onChange={(e) => handleFieldChange('company_info', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black placeholder-gray-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Website Link</label>
+          <input
+            type="url"
+            value={data.website_link || ''}
+            onChange={(e) => handleFieldChange('websiteLink', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black placeholder-gray-500"
           />
         </div>
