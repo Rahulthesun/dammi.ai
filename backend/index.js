@@ -27,7 +27,7 @@ import whatsappRoute from './routes/whatsapp.js';
 import generateTokenRouter from './routes/generateWidgetToken.js';
 import widgetDomainRoute from './routes/widgetDomain.js';
 import scrapeWebsiteRoute from './routes/scrapeWebsite.js';
-
+import whatsappRoutes from "./routes/whatsapp.js";
 
 // Register routes
 app.use('/', widgetRoute);
@@ -38,7 +38,7 @@ app.use('/whatsapp', whatsappRoute);
 app.use('/generate-widget-token', generateTokenRouter);
 app.use('/api/widget-domain', widgetDomainRoute);
 app.use('/api/scrape-website', scrapeWebsiteRoute);
-
+app.use("/api/whatsapp", whatsappRoutes);
 // Health check
 app.get('/health', (req, res) => {
   res.status(200).json({ message: 'Server is running ✅' });
