@@ -30,7 +30,11 @@ router.post('/webhook', async (req, res) => {
 
   try {
     const body = req.body;
-    if (body.object !== 'whatsapp_business_account') return;
+    if (body.object !== 'whatsapp_business_account') {
+      console.log('Ignored non-whatsapp_business_account object');
+      return;
+    }
+    
 
     for (const entry of body.entry || []) {
       for (const change of entry.changes || []) {
@@ -58,7 +62,8 @@ async function handleIncomingMessage(message, messageData) {
     // Simulate typing delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const businessId = process.env.DEFAULT_BUSINESS_ID || 'default-business';
+    const businessId = process.env.DEFAULT_BUSINESS_ID || 'a4823868-b57d-4f27-b715-a1b93ce8308d';
+    console.log('Using business ID:', businessId);
     const relevantChunks = await queryPinecone(messageText, businessId, 3);
 
     let responseText;

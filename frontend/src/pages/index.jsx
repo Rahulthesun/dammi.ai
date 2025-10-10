@@ -19,6 +19,7 @@ export default function DammiDashboard() {
   const [loading, setLoading] = useState(false);
   const [allowedDomain, setAllowedDomain] = useState("");
   const [saving, setSaving] = useState(false);
+  const [url , setUrl] = useState("");
 
   const API_BASE_URL=process.env.NEXT_PUBLIC_API_BASE_URL
   
@@ -87,7 +88,8 @@ export default function DammiDashboard() {
       });
 
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        //throw new Error('Network response was not ok');
+        console.log('Failed to fetch widget token');
       }
 
       const data = await response.json();
@@ -447,7 +449,7 @@ export default function DammiDashboard() {
             {activeTab === 'upload' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold mb-2 text-black">Fetch Data from  Your Website </h3>        
+                  <h3 className="text-lg font-semibold mb-2 text-black">Fetch Data from  Your Website</h3>        
                   <input
                     type='url'
                     value = {url}
