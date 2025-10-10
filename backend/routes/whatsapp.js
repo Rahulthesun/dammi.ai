@@ -1,14 +1,12 @@
-// routes/whatsapp.js
+// routes/whatsapp.js (updated)
 import express from 'express';
 import axios from 'axios';
 import queryPinecone from '../services/queryPinecone.js';
 import { generateAnswer } from '../services/llmService.js';
+import { getBusinessByPhoneNumberId, decryptToken } from '../services/businessService.js';
 
 const router = express.Router();
 
-// WhatsApp API configuration
-const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
-const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
 
 // ✅ Webhook verification
@@ -26,7 +24,7 @@ router.get('/webhook', (req, res) => {
 
 // ✅ Handle incoming webhook
 router.post('/webhook', async (req, res) => {
-  res.sendStatus(200); // immediately acknowledge to Meta
+  res.sendStatus(200);
 
   try {
     const body = req.body;
@@ -46,25 +44,33 @@ router.post('/webhook', async (req, res) => {
   }
 });
 
-// ✅ Handle a received WhatsApp message
+// ✅ Handle incoming message
 async function handleIncomingMessage(message, messageData) {
   try {
-    const from = message.from;
+    const customerPhone = message.from;
     const messageText = message.text?.body;
+    
+    if (!messageText) return;
 
-    if (!messageText) return console.log('Non-text message received, skipping...');
-    console.log(`📩 Message from ${from}: ${messageText}`);
+    // Get which business's phone number received this message
+    const phoneNumberId = messageData.metadata?.phone_number_id;
+    
+    // Look up business from database
+    const business = await getBusinessByPhoneNumberId(phoneNumberId);
+    
+    if (!business || !business.whatsapp?.isActive) {
+      console.error('❌ Business not found or WhatsApp not connected');
+      return;
+    }
 
-    // Simulate typing delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log(`📩 Message from ${customerPhone} to ${business.businessName}: ${messageText}`);
 
-    const businessId = process.env.DEFAULT_BUSINESS_ID || 'default-business';
-    const relevantChunks = await queryPinecone(messageText, businessId, 3);
+    // Query this business's data
+    const relevantChunks = await queryPinecone(messageText, business.businessId, 3);
 
     let responseText;
     if (!relevantChunks.length) {
-      responseText =
-        "I don't have enough information to answer that question. Please make sure your documents are uploaded.";
+      responseText = "I don't have enough information to answer that question.";
     } else {
       const context = relevantChunks
         .map((c, i) => `Context ${i + 1}:\n${c.text}`)
@@ -72,21 +78,27 @@ async function handleIncomingMessage(message, messageData) {
       responseText = await generateAnswer(messageText, context);
     }
 
-    await sendMessage(from, responseText);
+    // Decrypt the access token
+    const accessToken = decryptToken(business.whatsapp.accessToken);
+
+    // Send message using THEIR authorized token
+    await sendMessage(
+      customerPhone,
+      responseText,
+      business.whatsapp.phoneNumberId,
+      accessToken
+    );
+
   } catch (error) {
     console.error('❌ Error handling message:', error);
-    await sendMessage(
-      message.from,
-      "Sorry, I encountered an error while processing your message. Please try again."
-    );
   }
 }
 
 // ✅ Send message
-async function sendMessage(to, text) {
+async function sendMessage(to, text, phoneNumberId, accessToken) {
   try {
     const response = await axios.post(
-      `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
+      `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`,
       {
         messaging_product: 'whatsapp',
         to,
@@ -95,14 +107,14 @@ async function sendMessage(to, text) {
       },
       {
         headers: {
-          Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
       }
     );
-    console.log('✅ Message sent:', response.data);
+    console.log('✅ Message sent');
   } catch (error) {
-    console.error('❌ Error sending message:', error.response?.data?.error || error.message);
+    console.error('❌ Error sending message:', error.response?.data || error.message);
   }
 }
 
