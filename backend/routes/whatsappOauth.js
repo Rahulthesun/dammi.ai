@@ -2,20 +2,35 @@
 import express from 'express';
 import axios from 'axios';
 import crypto from 'crypto';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../backend/lib/supabaseClient.js';
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
 const router = express.Router();
 
 const META_APP_ID = process.env.META_APP_ID;
 const META_APP_SECRET = process.env.META_APP_SECRET;
 const REDIRECT_URI = process.env.APP_URL + '/api/whatsapp/oauth/callback';
+const STATE = "sdnsdnsdjnwednweejoednwdoewd"
+
+
+router.get('/' , (req,res) => {
+    if (!META_APP_ID || !META_APP_SECRET || !REDIRECT_URI || !STATE ) {
+      res.status(500).json({
+        error : 'Valid Keys Not Found to Make URL'        
+      });
+    }
+    const url = `https://www.facebook.com/v16.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${REDIRECT_URI}&state=${STATE}&scope=whatsapp_business_management,business_management`;
+    console.log(url);
+    res.status(200).json({
+      url : url
+    });
+});
 
 // 🔄 OAuth Callback - Meta redirects here after business authorizes
 router.get('/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
+    console.log(state) // State is returned to us , we send it first . If both the states match , it's successful , else the request cld be malicious and should be rejected
 
     if (!code) {
       return res.status(400).send('Authorization code missing');

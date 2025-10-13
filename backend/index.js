@@ -13,7 +13,11 @@ const HOST = "0.0.0.0";
 
 // Middleware
 app.use(express.static('./'));
-app.use(cors());
+app.use(cors(
+  {
+    origin :'http://localhost:3000'
+  }
+));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json()); // redundant with bodyParser.json(), but safe
@@ -27,7 +31,8 @@ import whatsappRoute from './routes/whatsapp.js';
 import generateTokenRouter from './routes/generateWidgetToken.js';
 import widgetDomainRoute from './routes/widgetDomain.js';
 import scrapeWebsiteRoute from './routes/scrapeWebsite.js';
-import whatsappRoutes from "./routes/whatsapp.js";
+import whatsappOtpGen from "./routes/otpGen.js";
+import whatsappOAuth from "./routes/whatsappOauth.js";
 
 // Register routes
 app.use('/', widgetRoute);
@@ -38,7 +43,8 @@ app.use('/whatsapp', whatsappRoute);
 app.use('/generate-widget-token', generateTokenRouter);
 app.use('/api/widget-domain', widgetDomainRoute);
 app.use('/api/scrape-website', scrapeWebsiteRoute);
-app.use("/api/whatsapp", whatsappRoutes);
+app.use("/api/whatsapp/oauth", whatsappOAuth); 
+app.use("/api/whatsapp-otp-gen", whatsappOtpGen);
 // Health check
 app.get('/health', (req, res) => {
   res.status(200).json({ message: 'Server is running ✅' });

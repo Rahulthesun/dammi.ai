@@ -24,3 +24,56 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* app/globals.css */
+@import "tailwindcss";
+
+:root {
+  --color-lavender: #C084FC;
+  --color-softPink: #F9A8D4;
+  --color-darkBg: #0D0B1E;
+  --color-darkPurple: #1B103F;
+  --color-lightCyan: #A5F3FC;
+  font-family: var(--font-manrope), sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, var(--color-darkBg) 0%, var(--color-darkPurple) 100%);
+  color: white;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Custom utility classes */
+.text-glow {
+  text-shadow: 0 0 20px rgba(192, 132, 252, 0.5);
+}
+
+.terminal-mode {
+  background: linear-gradient(135deg, var(--color-darkPurple) 0%, #2D1B69 100%) !important;
+}
+
+.terminal-mode .glow-text {
+  color: var(--color-lightCyan);
+  text-shadow: 0 0 10px rgba(165, 243, 252, 0.5);
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 20px rgba(192, 132, 252, 0.5); }
+  100% { box-shadow: 0 0 30px rgba(192, 132, 252, 0.8); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite alternate;
+}
