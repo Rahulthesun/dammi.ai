@@ -3,7 +3,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import Head from 'next/head';
 
 export default function App({ Component, pageProps, router }) {
-  const publicPages = ['/wsap_signup', '/wsap_landing' , '/privacy_policy', '/tos']; //"/login", "/signup",
+  const publicPages = ['/wsap_signup', '/wsap_landing' , '/privacy_policy', '/tos' , '/deletion']; //"/login", "/signup",
   const isPublicPage = publicPages.includes(router.pathname);
 
   if (isPublicPage) {
