@@ -3,6 +3,8 @@ import express from 'express';
 import axios from 'axios';
 import crypto from 'crypto';
 import { supabase } from '../../backend/lib/supabaseClient.js';
+import { randomBytes } from "crypto";
+
 
 
 const router = express.Router();
@@ -10,16 +12,16 @@ const router = express.Router();
 const META_APP_ID = process.env.META_APP_ID;
 const META_APP_SECRET = process.env.META_APP_SECRET;
 const REDIRECT_URI = process.env.APP_URL + '/api/whatsapp/oauth/callback';
-const STATE = "sdnsdnsdjnwednweejoednwdoewd"
+const BUSINESS_STATE = randomBytes(16).toString("hex"); // FUCK BUSINESSID MUST BE INPUTTED AS STATE
 
-
+//FOR FACEBOOK LOGIN TO GET CALLBACK
 router.get('/' , (req,res) => {
     if (!META_APP_ID || !META_APP_SECRET || !REDIRECT_URI || !STATE ) {
       res.status(500).json({
         error : 'Valid Keys Not Found to Make URL'        
       });
     }
-    const url = `https://www.facebook.com/v16.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${REDIRECT_URI}&state=${STATE}&scope=whatsapp_business_management,business_management`;
+    const url = `https://www.facebook.com/v16.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${REDIRECT_URI}&state=${BUSINESS_STATE}&scope=whatsapp_business_management,business_management`;
     console.log(url);
     res.status(200).json({
       url : url
@@ -30,15 +32,17 @@ router.get('/' , (req,res) => {
 router.get('/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
+    console.log(code)
     console.log(state) // State is returned to us , we send it first . If both the states match , it's successful , else the request cld be malicious and should be rejected
 
     if (!code) {
       return res.status(400).send('Authorization code missing');
     }
 
-    // Decode state to get businessId
-    const stateData = JSON.parse(Buffer.from(state, 'base64').toString());
-    const { businessId } = stateData;
+    //Write logic for rejecting non-similiar state values received
+
+ 
+    const businessId = state;
 
     console.log(`🔐 OAuth callback for business: ${businessId}`);
 
@@ -53,7 +57,7 @@ router.get('/callback', async (req, res) => {
     });
 
     const accessToken = tokenResponse.data.access_token;
-    console.log('✅ Access token received');
+    console.log('✅ Access token received'); // this access token might be temporary or short lived
 
     // Step 2: Get WhatsApp Business Account ID (WABA ID)
     const wabaResponse = await axios.get('https://graph.facebook.com/v18.0/debug_token', {
@@ -83,18 +87,47 @@ router.get('/callback', async (req, res) => {
     const phoneNumber = phoneNumberData.display_phone_number;
 
     console.log(`✅ Phone Number: ${phoneNumber} (ID: ${phoneNumberId})`);
-     const app_access_token=`${process.env.META_APP_ID}|${process.env.META_APP_SECRET}`;
+    const app_access_token=`${process.env.META_APP_ID}|${process.env.META_APP_SECRET}`;
+    
+    
     // Step 4: Subscribe to webhooks for this phone number
+    //const APP_ACCESS_TOKEN = `${process.env.META_APP_ID}|${process.env.META_APP_SECRET}`;
+
+    //OLD Not-working process built by adhi
+
+    
     await axios.post(
-      `https://graph.facebook.com/v18.0/${META_APP_ID}/subscriptions`,
+  `https://graph.facebook.com/v18.0/${META_APP_ID}/subscriptions`,
+  // Request body should be URL-encoded parameters
+  new URLSearchParams({
+    object: 'whatsapp_business_account',
+    callback_url: `${process.env.APP_URL}/api/whatsapp/webhook`,
+    verify_token: process.env.WHATSAPP_VERIFY_TOKEN,
+    fields: 'messages',
+    access_token: app_access_token
+  }),
+  {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  }
+);
+     
+    
+
+    
+    await axios.post(
+      `https://graph.facebook.com/v18.0/${wabaId}/subscribed_apps` ,
+      
       {
-        object: 'whatsapp_business_account',
-        callback_url: `${process.env.APP_URL}/api/whatsapp/webhook`,
-        verify_token: process.env.WHATSAPP_VERIFY_TOKEN,
-        fields: 'messages',
-        access_token: app_access_token   
-      }
+        headers: {
+          Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+        },
+      } 
+      
     );
+
+    
 
     console.log('✅ Webhook subscribed');
 

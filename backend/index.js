@@ -6,6 +6,8 @@ import bodyParser from 'body-parser';
 
 // Load environment variables
 dotenv.config();
+const APP_ACCESS_TOKEN = `${process.env.META_APP_ID}|${process.env.META_APP_SECRET}`
+console.log(APP_ACCESS_TOKEN)
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -39,7 +41,7 @@ app.use('/', widgetRoute);
 app.use('/api/submit-questionnaire', submitQuestionnaire);
 app.use('/api/upload', uploadRoutes);
 app.use('/query', queryRoute);
-app.use('/whatsapp', whatsappRoute);
+app.use('/api/whatsapp', whatsappRoute);
 app.use('/generate-widget-token', generateTokenRouter);
 app.use('/api/widget-domain', widgetDomainRoute);
 app.use('/api/scrape-website', scrapeWebsiteRoute);
@@ -59,4 +61,5 @@ app.listen(PORT, () => {
   console.log(`   GET /whatsapp/webhook - Webhook verification`);
   console.log(`   POST /whatsapp/webhook - Handle WhatsApp messages`);
   console.log(`   POST /api/submit-questionnaire - Submit questionnaire`);
+  console.log(APP_ACCESS_TOKEN)
 });

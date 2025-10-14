@@ -38,6 +38,7 @@ router.post('/webhook', async (req, res) => {
       for (const change of entry.changes || []) {
         if (change.field === 'messages' && change.value?.messages) {
           for (const message of change.value.messages) {
+            console.log(message)
             await handleIncomingMessage(message, change.value);
           }
         }
