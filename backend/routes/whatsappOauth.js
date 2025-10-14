@@ -13,7 +13,7 @@ const META_APP_ID = process.env.META_APP_ID;
 const META_APP_SECRET = process.env.META_APP_SECRET;
 const REDIRECT_URI = process.env.APP_URL + '/api/whatsapp/oauth/callback';
 const BUSINESS_STATE = randomBytes(16).toString("hex"); // FUCK BUSINESSID MUST BE INPUTTED AS STATE
-
+const STATE=BUSINESS_STATE//TEMP FIX  for above ?? idk
 //FOR FACEBOOK LOGIN TO GET CALLBACK
 router.get('/' , (req,res) => {
     if (!META_APP_ID || !META_APP_SECRET || !REDIRECT_URI || !BUSINESS_STATE ) {
@@ -95,37 +95,37 @@ router.get('/callback', async (req, res) => {
 
       //OLD Not-working process built by adhi
 
-      
-      await axios.post(
-    `https://graph.facebook.com/v18.0/${META_APP_ID}/subscriptions`,
-    // Request body should be URL-encoded parameters
-    new URLSearchParams({
-      object: 'whatsapp_business_account',
-      callback_url: `${process.env.APP_URL}/api/whatsapp/webhook`,
-      verify_token: process.env.WHATSAPP_VERIFY_TOKEN,
-      fields: 'messages',
-      access_token: app_access_token
-    }),
-    {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
+    
+    await axios.post(
+  `https://graph.facebook.com/v18.0/${META_APP_ID}/subscriptions`,
+  // Request body should be URL-encoded parameters
+  new URLSearchParams({
+    object: 'whatsapp_business_account',
+    callback_url: `${process.env.APP_URL}/api/webhooks/whatsapp`,
+    verify_token: process.env.WHATSAPP_VERIFY_TOKEN,
+    fields: 'messages',
+    access_token: app_access_token
+  }),
+  {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
     }
-  );
-      
-      
+  }
+);
+     
+    
 
+    
+    await axios.post(
+      `https://graph.facebook.com/v18.0/${wabaId}/subscribed_apps` ,
       
-      await axios.post(
-        `https://graph.facebook.com/v18.0/${wabaId}/subscribed_apps` ,
-        
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
-          },
-        } 
-        
-      );
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      } 
+      
+    );
 
       
 
