@@ -96,7 +96,7 @@ router.get('/callback', async (req, res) => {
     //OLD Not-working process built by adhi
 
     
-    await axios.post(
+   /* await axios.post(
   `https://graph.facebook.com/v18.0/${META_APP_ID}/subscriptions`,
   // Request body should be URL-encoded parameters
   new URLSearchParams({
@@ -111,13 +111,14 @@ router.get('/callback', async (req, res) => {
       'Content-Type': 'application/x-www-form-urlencoded'
     }
   }
-);
+);*/
      
     
 
     
     await axios.post(
       `https://graph.facebook.com/v18.0/${wabaId}/subscribed_apps` ,
+      {},
       
       {
         headers: {
