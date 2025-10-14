@@ -39,7 +39,7 @@ app.use('/', widgetRoute);
 app.use('/api/submit-questionnaire', submitQuestionnaire);
 app.use('/api/upload', uploadRoutes);
 app.use('/query', queryRoute);
-app.use('/whatsapp', whatsappRoute);
+app.use('/api/whatsapp', whatsappRoute);
 app.use('/generate-widget-token', generateTokenRouter);
 app.use('/api/widget-domain', widgetDomainRoute);
 app.use('/api/scrape-website', scrapeWebsiteRoute);

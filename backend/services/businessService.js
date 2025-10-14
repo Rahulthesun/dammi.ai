@@ -7,7 +7,7 @@ export async function getBusinessByPhoneNumberId(phoneNumberId) {
   const { data, error } = await supabase
     .from('whatsapp_accounts')
     .select('*')
-    .eq('phone_number_id', phoneNumberId)
+    .eq('phoneNumberId', phoneNumberId)
     .single();
   if (error) throw error;
   return data;
