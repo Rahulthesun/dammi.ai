@@ -101,7 +101,7 @@ router.get('/callback', async (req, res) => {
   // Request body should be URL-encoded parameters
   new URLSearchParams({
     object: 'whatsapp_business_account',
-    callback_url: `${process.env.APP_URL}/api/webhooks/whatsapp`,
+    callback_url: `${process.env.APP_URL}/api/whatsapp/webhook`,
     verify_token: process.env.WHATSAPP_VERIFY_TOKEN,
     fields: 'messages',
     access_token: app_access_token
