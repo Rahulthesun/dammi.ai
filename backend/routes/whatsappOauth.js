@@ -16,7 +16,7 @@ const BUSINESS_STATE = randomBytes(16).toString("hex"); // FUCK BUSINESSID MUST 
 
 //FOR FACEBOOK LOGIN TO GET CALLBACK
 router.get('/' , (req,res) => {
-    if (!META_APP_ID || !META_APP_SECRET || !REDIRECT_URI || !STATE ) {
+    if (!META_APP_ID || !META_APP_SECRET || !REDIRECT_URI || !BUSINESS_STATE ) {
       res.status(500).json({
         error : 'Valid Keys Not Found to Make URL'        
       });
@@ -90,46 +90,46 @@ router.get('/callback', async (req, res) => {
     const app_access_token=`${process.env.META_APP_ID}|${process.env.META_APP_SECRET}`;
     
     
-    // Step 4: Subscribe to webhooks for this phone number
-    //const APP_ACCESS_TOKEN = `${process.env.META_APP_ID}|${process.env.META_APP_SECRET}`;
+      // Step 4: Subscribe to webhooks for this phone number
+      //const APP_ACCESS_TOKEN = `${process.env.META_APP_ID}|${process.env.META_APP_SECRET}`;
 
-    //OLD Not-working process built by adhi
+      //OLD Not-working process built by adhi
 
-    
-    await axios.post(
-  `https://graph.facebook.com/v18.0/${META_APP_ID}/subscriptions`,
-  // Request body should be URL-encoded parameters
-  new URLSearchParams({
-    object: 'whatsapp_business_account',
-    callback_url: `${process.env.APP_URL}/api/whatsapp/webhook`,
-    verify_token: process.env.WHATSAPP_VERIFY_TOKEN,
-    fields: 'messages',
-    access_token: app_access_token
-  }),
-  {
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      
+      await axios.post(
+    `https://graph.facebook.com/v18.0/${META_APP_ID}/subscriptions`,
+    // Request body should be URL-encoded parameters
+    new URLSearchParams({
+      object: 'whatsapp_business_account',
+      callback_url: `${process.env.APP_URL}/api/whatsapp/webhook`,
+      verify_token: process.env.WHATSAPP_VERIFY_TOKEN,
+      fields: 'messages',
+      access_token: app_access_token
+    }),
+    {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
     }
-  }
-);
-     
-    
-
-    
-    await axios.post(
-      `https://graph.facebook.com/v18.0/${wabaId}/subscribed_apps` ,
+  );
       
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
-        },
-      } 
       
-    );
 
-    
+      
+      await axios.post(
+        `https://graph.facebook.com/v18.0/${wabaId}/subscribed_apps` ,
+        
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+          },
+        } 
+        
+      );
 
-    console.log('✅ Webhook subscribed');
+      
+
+      console.log('✅ Webhook subscribed');
 
     // Step 5: Store everything in your database
    
