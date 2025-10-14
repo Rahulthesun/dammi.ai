@@ -83,7 +83,7 @@ router.get('/callback', async (req, res) => {
     const phoneNumber = phoneNumberData.display_phone_number;
 
     console.log(`✅ Phone Number: ${phoneNumber} (ID: ${phoneNumberId})`);
-
+     const app_access_token=`${process.env.META_APP_ID}|${process.env.META_APP_SECRET}`;
     // Step 4: Subscribe to webhooks for this phone number
     await axios.post(
       `https://graph.facebook.com/v18.0/${META_APP_ID}/subscriptions`,
@@ -92,13 +92,14 @@ router.get('/callback', async (req, res) => {
         callback_url: `${process.env.APP_URL}/api/whatsapp/webhook`,
         verify_token: process.env.WHATSAPP_VERIFY_TOKEN,
         fields: 'messages',
-        access_token: accessToken
+        access_token: app_access_token   
       }
     );
 
     console.log('✅ Webhook subscribed');
 
     // Step 5: Store everything in your database
+   
     await saveWhatsAppConnection({
       businessId,
       wabaId,
