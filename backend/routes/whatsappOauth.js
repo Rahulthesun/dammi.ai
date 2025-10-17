@@ -195,16 +195,16 @@ function decrypt(encryptedData) {
 // Helper: Save to database
 async function saveWhatsAppConnection(data) {
   const { error } = await supabase
-    .from('whatsapp_connections')
+    .from('whatsapp_accounts')
     .upsert({
-      business_id: data.businessId,
-      waba_id: data.wabaId,
-      phone_number_id: data.phoneNumberId,
-      phone_number: data.phoneNumber,
-      access_token: data.accessToken.encrypted,
+      businessId: data.businessId,
+      wbaId: data.wabaId,
+      phoneNumberId: data.phoneNumberId,
+      phoneNumber: data.phoneNumber,
+      accessToken: data.accessToken.encrypted,
       iv: data.accessToken.iv,
-      auth_tag: data.accessToken.authTag,
-      connected_at: data.connectedAt
+      authTag: data.accessToken.authTag,
+      createdAt: data.connectedAt
     });
     if (error) throw error;
   

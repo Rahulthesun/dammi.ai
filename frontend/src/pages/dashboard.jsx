@@ -3,6 +3,7 @@ import { CheckCircle, Smartphone } from "lucide-react";
 
 const Dashboard = () => {
     return (
+        <>
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
             <div className="bg-white shadow-lg rounded-lg p-8 flex flex-col items-center">
                 <Smartphone size={48} className="text-green-500 mb-4" />
@@ -13,6 +14,9 @@ const Dashboard = () => {
                 </p>
             </div>
         </div>
+        
+        </>
+        
     );
 };
 

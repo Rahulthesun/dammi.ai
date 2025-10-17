@@ -1,9 +1,10 @@
 // routes/whatsapp.js (updated)
-import express from 'express';
+import express, { response } from 'express';
 import axios from 'axios';
 import queryPinecone from '../services/queryPinecone.js';
-import { generateAnswer } from '../services/llmService.js';
-import { getBusinessByPhoneNumberId, decryptToken } from '../services/businessService.js';
+import { generateAnswer, generateConfigResponse } from '../services/llmService.js';
+import { getBusinessByPhoneNumberId, decryptToken, fetchBusinessData, generateb2bresponse } from '../services/businessService.js';
+import { config } from 'dotenv';
 
 const router = express.Router();
 
@@ -59,23 +60,41 @@ async function handleIncomingMessage(message, messageData) {
 
     // Get which business's phone number received this message
     const phoneNumberId = messageData.metadata?.phone_number_id;
+    console.log(phoneNumberId)
     
     // Look up business from database
     const business = await getBusinessByPhoneNumberId(phoneNumberId);
+    console.log(business);
     
-    if (!business || !business.whatsapp?.isActive) {
+    //Tests if Whatsapp Was connected or Whatsapp Account Exists
+    if (!business || !business.wbaId) {
       console.error('❌ Business not found or WhatsApp not connected');
       return;
     }
 
-    console.log(`📩 Message from ${customerPhone} to ${business.businessName}: ${messageText}`);
+   
+
+    console.log(`📩 Message from ${customerPhone} to ${business.businessName} - ${business.adminPhone}: ${messageText}`);
 
     // Query this business's data
     const relevantChunks = await queryPinecone(messageText, business.businessId, 3);
 
     let responseText;
     if (!relevantChunks.length) {
-      responseText = "I don't have enough information to answer that question.";
+      if (customerPhone === business.adminPhone && !business.confirmed) {
+        const potential_businesses = await fetchBusinessData(business.businessName , business.businessLocation , business.phoneNumber);
+        console.log(potential_businesses)
+        const businessDataString = JSON.stringify(potential_businesses, null, 2); 
+        // null,2 formats nicely with indentation
+
+        console.log(potential_businesses.length)
+        if (potential_businesses.length) {
+          responseText = await generateConfigResponse(businessDataString, "business_not_confirmed");        
+        }
+      } else {
+          responseText = "I don't have enough information to answer that question.";
+      };      
+      
     } else {
       const context = relevantChunks
         .map((c, i) => `Context ${i + 1}:\n${c.text}`)
@@ -83,14 +102,22 @@ async function handleIncomingMessage(message, messageData) {
       responseText = await generateAnswer(messageText, context);
     }
 
+    console.log(responseText);
+
     // Decrypt the access token
-    const accessToken = decryptToken(business.whatsapp.accessToken);
+    console.log(business.accessToken);
+    const accessTokenData = {
+      encrypted : business.accessToken,
+      iv:business.iv,
+      authTag:business.authTag,
+    };
+    const accessToken = decryptToken(accessTokenData);//decryptToken(business.whatsapp.accessToken);
 
     // Send message using THEIR authorized token
     await sendMessage(
       customerPhone,
       responseText,
-      business.whatsapp.phoneNumberId,
+      business.phoneNumberId,
       accessToken
     );
 
