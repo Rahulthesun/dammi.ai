@@ -2,7 +2,7 @@
 import Groq from 'groq-sdk';
 import dotenv from 'dotenv';dotenv.config();
 
-const groq = new Groq({
+export const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
@@ -79,7 +79,7 @@ ${context}
 ${questionSection}
 
 Instructions:
-- The user may have confirmed their business or you may be collecting missing details (hours, website, phone, etc.).
+- The user has not confirmed their business and you are collecting details (hours, website, phone, etc.).
 - Ask naturally for missing information or acknowledge what’s already confirmed.
 - Keep it short, friendly, and casual.
 - Never mention “AI” or “context.”
@@ -129,10 +129,10 @@ Answer:
 export async function generateConfigResponse(businessData , step) {
   try {
     const prompt = createPrompt({
-  step: step,
-  context: businessData,
-  question: ""
-});
+      step: step,
+      context: businessData,
+      question: ""
+    });
  
 
 

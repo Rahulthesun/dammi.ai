@@ -16,6 +16,34 @@ export async function getBusinessByPhoneNumberId(phoneNumberId) {
 }
 
 
+export function formatbusinessData(BusinessData) {
+  const name = BusinessData.name || "Business Name Unknown";
+  const rating = BusinessData.rating ? `${BusinessData.rating}★` : "No rating";
+  const reviews = BusinessData.user_ratings_total || 0;
+  const address = BusinessData.address || "Address Not Available";
+  const place_id = BusinessData.place_id || "No Place Id";
+  return `${name} 
+  Address: ${address} 
+  Rating: ${rating} (${reviews} review${reviews === 1 ? '' : 's'}) 
+  Place ID: ${place_id}`;
+
+}
+
+export function formatBusinessDataForEmbedding(BusinessData) {
+  return Object.entries(BusinessData)
+    .map(([key, value]) => {
+      // Convert arrays to comma-separated strings
+      if (Array.isArray(value)) value = value.join(", ");
+      // Replace null/undefined with placeholder
+      if (value == null) value = "N/A";
+      // Format key to readable text
+      const formattedKey = key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      return `${formattedKey}: ${value}`;
+    })
+    .join("\n");
+}
+
+
 export async function fetchBusinessData(businessName , businessLocation , businessPhone) {
   let query = `${businessName}, ${businessLocation}, ${businessPhone}`;
   const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${process.env.GOOGLE_PLACES_KEY}`;

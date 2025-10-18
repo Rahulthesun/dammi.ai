@@ -3,8 +3,9 @@ import express, { response } from 'express';
 import axios from 'axios';
 import queryPinecone from '../services/queryPinecone.js';
 import { generateAnswer, generateConfigResponse } from '../services/llmService.js';
-import { getBusinessByPhoneNumberId, decryptToken, fetchBusinessData, generateb2bresponse } from '../services/businessService.js';
+import { getBusinessByPhoneNumberId, decryptToken, fetchBusinessData, generateb2bresponse, formatbusinessData } from '../services/businessService.js';
 import { config } from 'dotenv';
+import { chatHistory , addMessage } from '../services/chatHistory.js';
 
 const router = express.Router();
 
@@ -27,8 +28,26 @@ router.get('/webhook', (req, res) => {
 router.post('/webhook', async (req, res) => {
   res.sendStatus(200);
 
+  
+
   try {
     const body = req.body;
+    const {entry} = body;
+    entry.forEach(e => {
+    e.changes.forEach(change => {
+      const messageObj = change.value.messages?.[0];
+      if (!messageObj) return;
+
+      const from = messageObj.from; // sender's WhatsApp number
+      const text = messageObj.text?.body || "";
+
+      // Add user message
+      addMessage(from, "user", text);
+
+      console.log("Updated chat session:", chatHistory[from]);
+      });
+    });
+
     if (body.object !== 'whatsapp_business_account') {
       console.log('Ignored non-whatsapp_business_account object');
       return;
@@ -84,12 +103,10 @@ async function handleIncomingMessage(message, messageData) {
       if (customerPhone === business.adminPhone && !business.confirmed) {
         const potential_businesses = await fetchBusinessData(business.businessName , business.businessLocation , business.phoneNumber);
         console.log(potential_businesses)
-        const businessDataString = JSON.stringify(potential_businesses, null, 2); 
+        const formattedBusinessData = potential_businesses.map(formatbusinessData).join("\n\n") 
         // null,2 formats nicely with indentation
-
-        console.log(potential_businesses.length)
         if (potential_businesses.length) {
-          responseText = await generateConfigResponse(businessDataString, "business_not_confirmed");        
+          responseText = await generateConfigResponse(formattedBusinessData, "business_not_confirmed");        
         }
       } else {
           responseText = "I don't have enough information to answer that question.";
@@ -121,6 +138,8 @@ async function handleIncomingMessage(message, messageData) {
       accessToken
     );
 
+    addMessage(business.phoneNumber, "AI" , responseText);
+
   } catch (error) {
     console.error('❌ Error handling message:', error);
   }
@@ -130,7 +149,7 @@ async function handleIncomingMessage(message, messageData) {
 async function sendMessage(to, text, phoneNumberId, accessToken) {
   try {
     const response = await axios.post(
-      `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`,
+      `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, //This is business phone number id
       {
         messaging_product: 'whatsapp',
         to,
@@ -145,6 +164,7 @@ async function sendMessage(to, text, phoneNumberId, accessToken) {
       }
     );
     console.log('✅ Message sent');
+    
   } catch (error) {
     console.error('❌ Error sending message:', error.response?.data || error.message);
   }
