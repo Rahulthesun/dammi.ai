@@ -1,7 +1,10 @@
 import express from "express";
 import { crawlWebsite } from "../services/crawler.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 const router = express.Router();
+
 
 router.post("/crawl", async (req, res) => {
   const { websiteUrl, businessId } = req.body;

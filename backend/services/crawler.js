@@ -1,9 +1,23 @@
 import { CheerioCrawler, PlaywrightCrawler, RequestQueue } from 'crawlee';
 import { embedAndStoreCrawledData } from './embedCrawledService.js';
+import dotenv from "dotenv";
+dotenv.config();
 
 const CRAWL_DELAY_MS = 1000; // Be respectful to servers
 const MAX_DEPTH = 3; // Prevent infinite crawls
 const VISITED_URLS = new Set(); // Deduplicate URLs
+
+export function previewChunks(text, sourceUrl, businessId) {
+  const cleanText = cleanWebText(text);
+  const chunks = chunkTextSmart(cleanText, 800, 100);
+  
+  console.log(`\n🔗 Source: ${sourceUrl}`);
+  console.log(`🧩 Total chunks: ${chunks.length}`);
+  chunks.forEach((chunk, i) => {
+    console.log(`\n------ Chunk ${i + 1} (len: ${chunk.length}) ------`);
+    console.log(chunk.slice(0, 500)); // print first 500 chars for readability
+  });
+}
 
 export async function crawlWebsite(startUrl, businessId) {
   console.log(`🚀 Starting crawl for ${startUrl} (businessId: ${businessId})`);
@@ -13,7 +27,6 @@ export async function crawlWebsite(startUrl, businessId) {
 
   const cheerioCrawler = new CheerioCrawler({
     requestQueue,
-    ignoreRobotsTxt: true,
     maxRequestsPerCrawl: 100,
     maxConcurrency: 3,
     requestHandlerTimeoutSecs: 60,
@@ -77,7 +90,6 @@ async function crawlWithPlaywright(url, businessId, retries = 2) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const crawler = new PlaywrightCrawler({
-        ignoreRobotsTxt: true,
         maxConcurrency: 1,
         headless: true,
         navigationTimeoutSecs: 15,
