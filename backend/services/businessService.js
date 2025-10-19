@@ -11,7 +11,9 @@ export async function getBusinessByPhoneNumberId(phoneNumberId) {
     .select('*')
     .eq('phoneNumberId', phoneNumberId)
     .single();
-  if (error) throw error;
+  if (error) {
+        console.error("❌ BusinessByPhoneNumberId Error :", error);
+  }
   return data;
 }
 

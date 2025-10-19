@@ -6,6 +6,7 @@ import { generateAnswer, generateConfigResponse } from '../services/llmService.j
 import { getBusinessByPhoneNumberId, decryptToken, fetchBusinessData, generateb2bresponse, formatbusinessData } from '../services/businessService.js';
 import { config } from 'dotenv';
 import { chatHistory , addMessage } from '../services/chatHistory.js';
+import { generateSignupResponse } from "../services/signupflow.js";
 
 const router = express.Router();
 
@@ -106,7 +107,7 @@ async function handleIncomingMessage(message, messageData) {
         const formattedBusinessData = potential_businesses.map(formatbusinessData).join("\n\n") 
         // null,2 formats nicely with indentation
         if (potential_businesses.length) {
-          responseText = await generateConfigResponse(formattedBusinessData, "business_not_confirmed");        
+          responseText = await generateSignupResponse(formattedBusinessData, "business_not_confirmed" , customerPhone , phoneNumberId);        
         }
       } else {
           responseText = "I don't have enough information to answer that question.";
