@@ -20,13 +20,14 @@ export async function embedAndStoreCrawledData(text, sourceUrl, businessId) {
 
   const chunks = chunkTextSmart(cleanText, CHUNK_SIZE, CHUNK_OVERLAP);
   const vectors = [];
-
   try {
     for (const chunk of chunks) {
+      console.log("Chunk : "+chunk+"\n")
       const embedding = await openai.embeddings.create({
         model: "text-embedding-3-small",
         input: chunk,
       });
+      
 
       vectors.push({
         id: `${businessId}-${Date.now()}-${Math.random().toString(36).slice(2)}`,

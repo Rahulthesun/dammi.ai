@@ -8,6 +8,8 @@ import { getBusinessByPhoneNumberId, decryptToken } from '../services/businessSe
 const router = express.Router();
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
+const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 
 // ✅ Webhook verification
 router.get('/webhook', (req, res) => {
@@ -67,6 +69,11 @@ async function handleIncomingMessage(message, messageData) {
       console.error('❌ Business not found or WhatsApp not connected');
       return;
     }
+    const intent= await detectIntent(messageText)
+    if (intent === "book") {
+    await bookFunction(customerPhone, messageText,business);
+  }
+
 
     console.log(`📩 Message from ${customerPhone} to ${business.businessName}: ${messageText}`);
 
@@ -96,6 +103,51 @@ async function handleIncomingMessage(message, messageData) {
 
   } catch (error) {
     console.error('❌ Error handling message:', error);
+  }
+}
+async function detectIntent(message) {
+  const bookingKeywords = ["book", "reserve", "schedule", "appointment", "slot"];
+  const lower = message.toLowerCase();
+
+  if (bookingKeywords.some(word => lower.includes(word))) {
+    return "book";
+  }
+  return "other";
+}
+ async function bookFunction(userPhone, messageText) {
+  try {
+    const summary = `
+📅 *New Booking Request*
+-------------------------
+👤 From: ${userPhone}
+💬 Message: "${messageText}"
+⏰ Received: ${new Date().toLocaleString()}
+-------------------------
+`;
+
+    // Send message to Admin
+    await axios.post(
+      `https://graph.facebook.com/v18.0/${process.env.PHONE_NUMBER_ID}/messages`,
+      {
+        messaging_product: "whatsapp",
+        to: business.whatsapp.adminPhone,
+        text: { body: summary },
+      },
+      { headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}` } }
+    );
+
+    //confirmation to user
+    await axios.post(
+      `https://graph.facebook.com/v18.0/${process.env.PHONE_NUMBER_ID}/messages`,
+      {
+        messaging_product: "whatsapp",
+        to: userPhone,
+        text: { body: "✅ Your booking request has been sent to the admin. We’ll contact you shortly!" },
+      },
+      { headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}` } }
+    );
+  } catch (error) {
+    console.error("Error in bookFunction:", error.response?.data || error);
   }
 }
 
