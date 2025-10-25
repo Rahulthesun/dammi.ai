@@ -16,7 +16,7 @@ const BUSINESS_STATE = randomBytes(16).toString("hex"); // FUCK BUSINESSID MUST 
 const STATE=BUSINESS_STATE//TEMP FIX  for above ?? idk
 //FOR FACEBOOK LOGIN TO GET CALLBACK
 router.get('/' , (req,res) => {
-    if (!META_APP_ID || !META_APP_SECRET || !REDIRECT_URI || !STATE ) {
+    if (!META_APP_ID || !META_APP_SECRET || !REDIRECT_URI || !BUSINESS_STATE ) {
       res.status(500).json({
         error : 'Valid Keys Not Found to Make URL'        
       });
@@ -90,10 +90,10 @@ router.get('/callback', async (req, res) => {
     const app_access_token=`${process.env.META_APP_ID}|${process.env.META_APP_SECRET}`;
     
     
-    // Step 4: Subscribe to webhooks for this phone number
-    //const APP_ACCESS_TOKEN = `${process.env.META_APP_ID}|${process.env.META_APP_SECRET}`;
+      // Step 4: Subscribe to webhooks for this phone number
+      //const APP_ACCESS_TOKEN = `${process.env.META_APP_ID}|${process.env.META_APP_SECRET}`;
 
-    //OLD Not-working process built by adhi
+      //OLD Not-working process built by adhi
 
     
    /* await axios.post(
@@ -101,7 +101,7 @@ router.get('/callback', async (req, res) => {
   // Request body should be URL-encoded parameters
   new URLSearchParams({
     object: 'whatsapp_business_account',
-    callback_url: `${process.env.APP_URL}/api/webhooks/whatsapp`,
+    callback_url: `${process.env.APP_URL}/api/whatsapp/webhook`,
     verify_token: process.env.WHATSAPP_VERIFY_TOKEN,
     fields: 'messages',
     access_token: app_access_token
@@ -128,9 +128,9 @@ router.get('/callback', async (req, res) => {
       
     );
 
-    
+      
 
-    console.log('✅ Webhook subscribed');
+      console.log('✅ Webhook subscribed');
 
     // Step 5: Store everything in your database
    
@@ -195,16 +195,16 @@ function decrypt(encryptedData) {
 // Helper: Save to database
 async function saveWhatsAppConnection(data) {
   const { error } = await supabase
-    .from('whatsapp_connections')
+    .from('whatsapp_accounts')
     .upsert({
-      business_id: data.businessId,
-      waba_id: data.wabaId,
-      phone_number_id: data.phoneNumberId,
-      phone_number: data.phoneNumber,
-      access_token: data.accessToken.encrypted,
+      businessId: data.businessId,
+      wbaId: data.wabaId,
+      phoneNumberId: data.phoneNumberId,
+      phoneNumber: data.phoneNumber,
+      accessToken: data.accessToken.encrypted,
       iv: data.accessToken.iv,
-      auth_tag: data.accessToken.authTag,
-      connected_at: data.connectedAt
+      authTag: data.accessToken.authTag,
+      createdAt: data.connectedAt
     });
     if (error) throw error;
   

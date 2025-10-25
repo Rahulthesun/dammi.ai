@@ -1,0 +1,9 @@
+{
+	"id": "WU1NC1rEctg9SrR",
+	"json": "{\"id\":\"WU1NC1rEctg9SrR\",\"url\":\"https://www.buildify-web.com/services\",\"loadedUrl\":\"https://www.buildify-web.com/services\",\"uniqueKey\":\"https://www.buildify-web.com/services\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"depth\":1,\"__crawlee\":{\"crawlDepth\":1,\"enqueueStrategy\":\"same-domain\",\"state\":4}},\"handledAt\":\"2025-10-19T18:01:57.132Z\"}",
+	"method": "GET",
+	"orderNo": null,
+	"retryCount": 0,
+	"uniqueKey": "https://www.buildify-web.com/services",
+	"url": "https://www.buildify-web.com/services"
+}

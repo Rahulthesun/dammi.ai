@@ -1,0 +1,9 @@
+{
+	"id": "z7NZV8hDXg7Ot48",
+	"json": "{\"id\":\"z7NZV8hDXg7Ot48\",\"url\":\"https://buildify-web.com/\",\"loadedUrl\":\"https://www.buildify-web.com/\",\"uniqueKey\":\"https://buildify-web.com\",\"method\":\"GET\",\"noRetry\":false,\"retryCount\":0,\"errorMessages\":[],\"headers\":{},\"userData\":{\"depth\":0,\"__crawlee\":{\"state\":4}},\"handledAt\":\"2025-10-19T18:01:31.040Z\"}",
+	"method": "GET",
+	"orderNo": null,
+	"retryCount": 0,
+	"uniqueKey": "https://buildify-web.com",
+	"url": "https://buildify-web.com/"
+}
