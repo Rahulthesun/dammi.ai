@@ -93,9 +93,18 @@ async function handleIncomingMessage(message, messageData) {
       console.error('❌ Business not found or WhatsApp not connected');
       return;
     }
+
+    const accessTokenData = {
+      encrypted : business.accessToken,
+      iv:business.iv,
+      authTag:business.authTag,
+    };
+    const accessToken = decryptToken(accessTokenData);//decryptToken(business.whatsapp.accessToken);
+
     const intent= await detectIntent(messageText)
     if (intent === "book") {
-    await bookFunction(customerPhone, messageText,business);
+      
+    await bookFunction(customerPhone, messageText, business, phoneNumberId, accessToken);
     return;
   }
 
@@ -132,13 +141,7 @@ async function handleIncomingMessage(message, messageData) {
 
     // Decrypt the access token
     console.log(business.accessToken);
-    const accessTokenData = {
-      encrypted : business.accessToken,
-      iv:business.iv,
-      authTag:business.authTag,
-    };
-    const accessToken = decryptToken(accessTokenData);//decryptToken(business.whatsapp.accessToken);
-
+    
     // Send message using THEIR authorized token
     await sendMessage(
       customerPhone,
