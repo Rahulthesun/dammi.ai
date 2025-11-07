@@ -93,9 +93,19 @@ async function handleIncomingMessage(message, messageData) {
       console.error('❌ Business not found or WhatsApp not connected');
       return;
     }
+
+    const accessTokenData = {
+      encrypted : business.accessToken,
+      iv:business.iv,
+      authTag:business.authTag,
+    };
+    const accessToken = decryptToken(accessTokenData);//decryptToken(business.whatsapp.accessToken);
+
     const intent= await detectIntent(messageText)
     if (intent === "book") {
-    await bookFunction(customerPhone, messageText,business);
+      
+    await bookFunction(customerPhone, messageText, business, phoneNumberId, accessToken);
+    return;
   }
 
 
@@ -131,13 +141,7 @@ async function handleIncomingMessage(message, messageData) {
 
     // Decrypt the access token
     console.log(business.accessToken);
-    const accessTokenData = {
-      encrypted : business.accessToken,
-      iv:business.iv,
-      authTag:business.authTag,
-    };
-    const accessToken = decryptToken(accessTokenData);//decryptToken(business.whatsapp.accessToken);
-
+    
     // Send message using THEIR authorized token
     await sendMessage(
       customerPhone,
@@ -155,46 +159,96 @@ async function handleIncomingMessage(message, messageData) {
 async function detectIntent(message) {
   const bookingKeywords = ["book", "reserve", "schedule", "appointment", "slot"];
   const lower = message.toLowerCase();
+  const intent=await generateAnswer(`Analyze this user message: "${message}".
+     Does the user want to book, reserve, schedule, or make an appointment 
+    for a service? Reply with only "book" if yes, or "none" if no.`)
+  return intent;
 
-  if (bookingKeywords.some(word => lower.includes(word))) {
-    return "book";
-  }
-  return "other";
 }
- async function bookFunction(userPhone, messageText) {
+ const bookingSessions = new Map(); //need to switch this to a db storing sessions in the future
+
+async function bookFunction(userPhone, messageText, business, phoneNumberId, accessToken) {
   try {
-    const summary = `
+    // Check if we already have an ongoing booking session for this user
+    let session = bookingSessions.get(userPhone);
+
+    if (!session) {
+      // Start a new booking conversation
+      session = {
+        messages: [],
+        isComplete: false,
+      };
+      bookingSessions.set(userPhone, session);
+
+      // AI asks the first booking-related question
+      const firstQuestion = await generateAnswer(`
+        You are a helpful booking assistant. The user said: "${messageText}".
+        Start a booking conversation by asking your first question to gather booking details 
+        (like service type, date/time, number of people, etc).
+        Ask naturally and conversationally, one question at a time.
+      `);
+
+      session.messages.push({ role: "assistant", content: firstQuestion });
+      await sendMessage(userPhone, firstQuestion, phoneNumberId, accessToken);
+      return;
+    }
+
+    // Continue existing conversation
+    session.messages.push({ role: "user", content: messageText });
+
+    // Ask the AI whether it now has enough info
+    const intentCheck = await generateAnswer(`
+      Given the conversation so far:
+      ${JSON.stringify(session.messages, null, 2)}
+
+      Have you gathered enough information to confirm the booking?
+      Reply with only "yes" or "no".
+    `);
+
+    if (intentCheck.toLowerCase().includes("no")) {
+      // Continue asking follow-up questions
+      const nextQuestion = await generateAnswer(`
+        Based on the conversation so far:
+        ${JSON.stringify(session.messages, null, 2)}
+
+        Ask the next most relevant question to complete the booking details.
+        Keep it short and conversational.
+      `);
+
+      session.messages.push({ role: "assistant", content: nextQuestion });
+      await sendMessage(userPhone, nextQuestion, phoneNumberId, accessToken);
+    } else {
+      // Booking info is complete — summarize and notify admin
+      const summary = await generateAnswer(`
+        Summarize the booking conversation below into a neat, structured booking summary:
+        ${JSON.stringify(session.messages, null, 2)}
+      `);
+
+      const adminMessage = `
 📅 *New Booking Request*
 -------------------------
 👤 From: ${userPhone}
-💬 Message: "${messageText}"
-⏰ Received: ${new Date().toLocaleString()}
+${summary}
 -------------------------
-`;
+⏰ Received: ${new Date().toLocaleString()}
+      `;
 
-    // Send message to Admin
-    await axios.post(
-      `https://graph.facebook.com/v18.0/${process.env.PHONE_NUMBER_ID}/messages`,
-      {
-        messaging_product: "whatsapp",
-        to: business.whatsapp.adminPhone,
-        text: { body: summary },
-      },
-      { headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}` } }
-    );
+      // Send to admin
+      await sendMessage(business.whatsapp.adminPhone, adminMessage, phoneNumberId, accessToken);
 
-    //confirmation to user
-    await axios.post(
-      `https://graph.facebook.com/v18.0/${process.env.PHONE_NUMBER_ID}/messages`,
-      {
-        messaging_product: "whatsapp",
-        to: userPhone,
-        text: { body: "✅ Your booking request has been sent to the admin. We’ll contact you shortly!" },
-      },
-      { headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}` } }
-    );
+      // Confirm with user
+      await sendMessage(
+        userPhone,
+        " Thank you! Your booking has been confirmed and sent to our admin. We'll contact you soon!",
+        phoneNumberId,
+        accessToken
+      );
+
+      // End the session
+      bookingSessions.delete(userPhone);
+    }
   } catch (error) {
-    console.error("Error in bookFunction:", error.response?.data || error);
+    console.error("❌ Error in bookFunction:", error.response?.data || error.message);
   }
 }
 
