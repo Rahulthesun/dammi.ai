@@ -2,7 +2,7 @@
 import express, { response } from 'express';
 import axios from 'axios';
 import queryPinecone from '../services/queryPinecone.js';
-import { generateAnswer, generateConfigResponse } from '../services/llmService.js';
+import { generateAnswer } from '../services/llmService.js';
 import { getBusinessByPhoneNumberId, decryptToken, fetchBusinessData, generateb2bresponse, formatbusinessData } from '../services/businessService.js';
 import { config } from 'dotenv';
 import { chatHistory , addMessage } from '../services/chatHistory.js';
