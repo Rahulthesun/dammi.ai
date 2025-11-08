@@ -2,7 +2,38 @@
 import Groq from 'groq-sdk';
 import dotenv from 'dotenv';dotenv.config();
 import { chatHistory } from "./chatHistory.js";
+import sendMessage from "../routes/whatsapp.js";
+import { createClient } from "@supabase/supabase-js";
+//SAVEBOOKINGTODB
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+export async function saveBookingToDB(bookingData) {
+  const { userPhone, service, date, time, people, notes } = bookingData;
 
+  const { data, error } = await supabase
+    .from("bookings")
+    .insert([
+      {
+        user_phone: userPhone,
+        service,
+        date,
+        time,
+        people,
+        notes,
+      },
+    ])
+    .select();
+
+  if (error) {
+    console.error("❌ Error inserting into bookings table:", error);
+    throw error;
+  }
+
+  console.log("✅ Booking recorded in DB:", data);
+  return data[0];
+}
 const tool_functions = [
   {
     type: "function",
@@ -165,6 +196,8 @@ Answer:`;
       model: "llama-3.1-8b-instant", // Fast and good quality
       temperature: 0.1, // Low temperature for factual responses
       max_tokens: 300,
+      tools: tool_functions, 
+      tool_choice: "auto",
     });
 
     const messages = completion.choices[0]?.message; // Contains all the data from the ai completion
@@ -173,16 +206,18 @@ Answer:`;
     if (messages.content) {
         return messages?.content || "Some Error Occured & I couldn't generate an answer at the moment.";
     } else {
-        for (const toolCall of messages.tool_calls) {
-            const { name, arguments: rawArgs } = toolCall.function;
-            const func_args = JSON.parse(rawArgs || "{}");
-            switch (name) {
-                case "bookFunction":
-                console.log("🧾 Calling bookFunction with args:", func_args);
-                const responseText = await bookFunction(func_args.place_id, phoneNumberId);
-                return responseText;
-            }
-        } 
+      if (messages.tool_calls && messages.tool_calls.length > 0) {
+          for (const toolCall of messages.tool_calls) {
+              const { name, arguments: rawArgs } = toolCall.function;
+              const func_args = JSON.parse(rawArgs || "{}");
+              switch (name) {
+                  case "bookFunction":
+                  console.log("🧾 Calling bookFunction with args:", func_args);
+                  const responseText = await bookFunction(func_args);
+                  return responseText.message;
+              }
+          } 
+      }
     }
     return completion.choices[0]?.message?.content || "I couldn't generate an answer at the moment.";
     
