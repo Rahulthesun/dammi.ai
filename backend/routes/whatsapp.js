@@ -131,10 +131,11 @@ async function handleIncomingMessage(message, messageData) {
       };      
       
     } else {
+      console.log("Relevant Chunks Found:", relevantChunks);
       const context = relevantChunks
         .map((c, i) => `Context ${i + 1}:\n${c.text}`)
         .join('\n\n');
-      responseText = await generateAnswer(messageText, context);
+      responseText = await generateAnswer(messageText, context , business?.businessName , customerPhone);
     }
 
     console.log(responseText);

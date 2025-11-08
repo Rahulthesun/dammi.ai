@@ -1,6 +1,61 @@
 // services/llmService.js
 import Groq from 'groq-sdk';
 import dotenv from 'dotenv';dotenv.config();
+import { chatHistory } from "./chatHistory.js";
+
+const tool_functions = [
+  {
+    type: "function",
+    function: {
+      name: "bookFunction",
+      description: `
+Create and confirm a user booking for any type of business or service.
+
+This function should be used once all key booking details have been gathered during conversation.
+It can handle various business types such as salons, restaurants, clinics, studios, gyms, repair services, etc.
+
+The AI should only call this function once it has clear and complete information like:
+- What service or product the user wants to book
+- The preferred date and time
+- The number of people (if relevant)
+- Any special requests, notes, or preferences
+- The user's contact number (usually WhatsApp)
+
+Once called, this function confirms the booking, stores the details, and optionally notifies the business admin.`,
+      parameters: {
+        type: "object",
+        properties: {
+          userPhone: {
+            type: "string",
+            description: "User's WhatsApp phone number",
+          },
+          service: {
+            type: "string",
+            description: "Type of service the user wants to book (e.g., haircut, massage, table reservation)",
+          },
+          date: {
+            type: "string",
+            description: "Date of the booking, in ISO or natural format",
+          },
+          time: {
+            type: "string",
+            description: "Time of the booking",
+          },
+          people: {
+            type: "string",
+            description: "Number of people or guests for the booking",
+          },
+          notes: {
+            type: "string",
+            description: "Any special requests, comments, or additional info from the user",
+          },
+        },
+        required: ["userPhone", "service", "date", "time"],
+      },
+    },
+  },
+];
+
 
 export const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -41,9 +96,14 @@ const steps = {
  */
 
 
-async function generateAnswer(question, context) {
+async function generateAnswer(question, context , businessName , userPhone) {
   try {
-    const SystemPrompt = `You are a WhatsApp business assistant for {{business_name}} — friendly, helpful, and designed to chat naturally with customers.
+    const SystemPrompt = `You are a WhatsApp business assistant for ${businessName} — friendly, helpful, and designed to chat naturally with customers.
+
+Context:
+${context}
+
+Question: ${question}
 
 Your personality:
 - Sound like a real person chatting on WhatsApp — short, warm, and clear.
@@ -98,14 +158,32 @@ Answer:`;
       messages: [
         {
           role: "user",
-          content: prompt,
+          content: SystemPrompt //prompt,
         },
+        ...(chatHistory[userPhone] || []),
       ],
       model: "llama-3.1-8b-instant", // Fast and good quality
       temperature: 0.1, // Low temperature for factual responses
       max_tokens: 300,
     });
 
+    const messages = completion.choices[0]?.message; // Contains all the data from the ai completion
+    console.log(messages)
+
+    if (messages.content) {
+        return messages?.content || "Some Error Occured & I couldn't generate an answer at the moment.";
+    } else {
+        for (const toolCall of messages.tool_calls) {
+            const { name, arguments: rawArgs } = toolCall.function;
+            const func_args = JSON.parse(rawArgs || "{}");
+            switch (name) {
+                case "bookFunction":
+                console.log("🧾 Calling bookFunction with args:", func_args);
+                const responseText = await bookFunction(func_args.place_id, phoneNumberId);
+                return responseText;
+            }
+        } 
+    }
     return completion.choices[0]?.message?.content || "I couldn't generate an answer at the moment.";
     
   } catch (error) {
@@ -114,7 +192,80 @@ Answer:`;
   }
 }
 
+// --- Universal Book Function ---
+// This is the actual function your backend runs when the AI triggers "bookFunction"
+
+async function bookFunction({ userPhone, service, date, time, people, notes }) {
+  try {
+    console.log("📘 Creating booking for:", userPhone);
+
+    // Prepare the booking record
+    const bookingData = {
+      userPhone,
+      service,
+      date,
+      time,
+      people: people || "Not specified",
+      notes: notes || "None",
+      createdAt: new Date().toISOString(),
+    };
+
+    // Save booking (replace with your DB logic)
+    await saveBookingToDB(bookingData);
+
+    // Notify admin (replace with your admin phone or channel)
+    const adminMessage = `
+📅 *New Booking Confirmed*
+-------------------------
+👤 From: ${userPhone}
+🛎️ Service: ${service}
+📆 Date: ${date}
+⏰ Time: ${time}
+👥 People: ${people || "Not specified"}
+📝 Notes: ${notes || "None"}
+-------------------------
+✅ Received: ${new Date().toLocaleString()}
+    `;
+    await sendMessage(process.env.ADMIN_PHONE, adminMessage);
+
+    // Confirm booking with user
+    const userMessage = `
+✅ *Booking Confirmed!*
+Thank you for booking *${service}*.
+📅 ${date} at ${time}
+${people ? `👥 For ${people}\n` : ""}${notes ? `📝 Note: ${notes}\n` : ""}
+We'll contact you soon if any updates are needed.
+    `;
+    await sendMessage(userPhone, userMessage);
+
+    // Return confirmation data to the model (so it can respond contextually)
+    return {
+      success: true,
+      message: "Booking created and confirmed successfully.",
+      bookingData,
+    };
+  } catch (error) {
+    console.error("❌ Error in bookFunction:", error);
+
+    // Send user error message
+    await sendMessage(
+      userPhone,
+      "⚠️ Sorry, something went wrong while confirming your booking. Please try again shortly."
+    );
+
+    return {
+      success: false,
+      message: "Booking creation failed.",
+      error: error.message,
+    };
+  }
+}
+
+
 export {generateAnswer};
+
+
+
 
 
 
