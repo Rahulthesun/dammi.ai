@@ -2,7 +2,7 @@
 import express from 'express';
 import axios from 'axios';
 import crypto from 'crypto';
-import { supabase } from '../../backend/lib/supabaseClient.js';
+import { supabase } from '../backend/lib/supabaseClient.js';
 import { randomBytes } from "crypto";
 
 

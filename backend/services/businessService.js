@@ -17,6 +17,18 @@ export async function getBusinessByPhoneNumberId(phoneNumberId) {
   return data;
 }
 
+export async function getBusinessById(id) {
+  const { data, error } = await supabase
+    .from('whatsapp_accounts')
+    .select('*')
+    .eq('businessId', id)
+    .single();
+  if (error) {
+        console.error("❌ BusinessById Error :", error);
+  }
+  return data;
+}
+
 
 export function formatbusinessData(BusinessData) {
   const name = BusinessData.name || "Business Name Unknown";

@@ -2,15 +2,17 @@
 import Groq from 'groq-sdk';
 import dotenv from 'dotenv';dotenv.config();
 import { chatHistory } from "./chatHistory.js";
-import sendMessage from "../routes/whatsapp.js";
+import { sendMessage } from "../routes/whatsapp.js";
 import { createClient } from "@supabase/supabase-js";
+import { getBusinessByPhoneNumberId , getBusinessById , decryptToken } from './businessService.js';
 //SAVEBOOKINGTODB
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
-export async function saveBookingToDB(bookingData) {
+export async function saveBookingToDB(bookingData , businessId) {
   const { userPhone, service, date, time, people, notes } = bookingData;
+  const businessData = await getBusinessById(businessId); // Fetch business data From businessId
 
   const { data, error } = await supabase
     .from("bookings")
@@ -22,6 +24,7 @@ export async function saveBookingToDB(bookingData) {
         time,
         people,
         notes,
+        profile_id : businessData.id
       },
     ])
     .select();
@@ -34,25 +37,25 @@ export async function saveBookingToDB(bookingData) {
   console.log("✅ Booking recorded in DB:", data);
   return data[0];
 }
+
+
 const tool_functions = [
   {
     type: "function",
     function: {
       name: "bookFunction",
       description: `
-Create and confirm a user booking for any type of business or service.
+Book and confirm a user appointment or reservation.
 
-This function should be used once all key booking details have been gathered during conversation.
-It can handle various business types such as salons, restaurants, clinics, studios, gyms, repair services, etc.
+Call this function only after collecting:
+- Service name
+- Date
+- Time
+- User's phone number
+- (Optional) People count or notes
 
-The AI should only call this function once it has clear and complete information like:
-- What service or product the user wants to book
-- The preferred date and time
-- The number of people (if relevant)
-- Any special requests, notes, or preferences
-- The user's contact number (usually WhatsApp)
-
-Once called, this function confirms the booking, stores the details, and optionally notifies the business admin.`,
+This function must receive complete and valid details in JSON format.
+Do NOT call it with missing or unclear information.`,
       parameters: {
         type: "object",
         properties: {
@@ -127,7 +130,7 @@ const steps = {
  */
 
 
-async function generateAnswer(question, context , businessName , userPhone) {
+async function generateAnswer(question, context , businessName , userPhone , businessId) {
   try {
     const SystemPrompt = `You are a WhatsApp business assistant for ${businessName} — friendly, helpful, and designed to chat naturally with customers.
 
@@ -203,22 +206,41 @@ Answer:`;
     const messages = completion.choices[0]?.message; // Contains all the data from the ai completion
     console.log(messages)
 
+    //CALLS THE TOOLS IF NEEDED
     if (messages.content) {
-        return messages?.content || "Some Error Occured & I couldn't generate an answer at the moment.";
+      return (
+        messages?.content ||
+        "Some Error Occured & I couldn't generate an answer at the moment."
+      );
     } else {
       if (messages.tool_calls && messages.tool_calls.length > 0) {
-          for (const toolCall of messages.tool_calls) {
-              const { name, arguments: rawArgs } = toolCall.function;
-              const func_args = JSON.parse(rawArgs || "{}");
-              switch (name) {
-                  case "bookFunction":
-                  console.log("🧾 Calling bookFunction with args:", func_args);
-                  const responseText = await bookFunction(func_args);
-                  return responseText.message;
+        for (const toolCall of messages.tool_calls) {
+          const { name, arguments: rawArgs } = toolCall.function;
+          const func_args = JSON.parse(rawArgs || "{}");
+        
+          switch (name) {
+            case "bookFunction":
+              console.log("🧾 Calling bookFunction with args:", func_args);
+          
+              const responseText = await bookFunction(func_args , businessId);
+              console.log("🧾 bookFunction response:", responseText);
+          
+              if (responseText.success) {
+                await saveBookingToDB(responseText?.bookingData, businessId);
               }
-          } 
+
+              return ;
+            
+            default:
+              console.log(`⚠️ Unknown tool function called: ${name}`);
+              break;
+          }
+        }
       }
     }
+
+
+
     return completion.choices[0]?.message?.content || "I couldn't generate an answer at the moment.";
     
   } catch (error) {
@@ -230,7 +252,7 @@ Answer:`;
 // --- Universal Book Function ---
 // This is the actual function your backend runs when the AI triggers "bookFunction"
 
-async function bookFunction({ userPhone, service, date, time, people, notes }) {
+async function bookFunction({ userPhone, service, date, time, people, notes} , businessId) {
   try {
     console.log("📘 Creating booking for:", userPhone);
 
@@ -246,7 +268,7 @@ async function bookFunction({ userPhone, service, date, time, people, notes }) {
     };
 
     // Save booking (replace with your DB logic)
-    await saveBookingToDB(bookingData);
+   
 
     // Notify admin (replace with your admin phone or channel)
     const adminMessage = `
@@ -261,17 +283,25 @@ async function bookFunction({ userPhone, service, date, time, people, notes }) {
 -------------------------
 ✅ Received: ${new Date().toLocaleString()}
     `;
-    await sendMessage(process.env.ADMIN_PHONE, adminMessage);
+
+    const businessData = await getBusinessById(businessId);
+    const accessTokenData = {
+          encrypted : businessData.accessToken,
+          iv:businessData.iv,
+          authTag:businessData.authTag,
+        };
+    const accessToken = decryptToken(accessTokenData);//decryptToken(business.whatsapp.accessToken);
+    await sendMessage(businessData.phoneNumber, adminMessage , businessData.phoneNumberId , accessToken);
 
     // Confirm booking with user
     const userMessage = `
 ✅ *Booking Confirmed!*
-Thank you for booking *${service}*.
+Thank you for booking *${service}* at ${businessData?.businessName}.
 📅 ${date} at ${time}
 ${people ? `👥 For ${people}\n` : ""}${notes ? `📝 Note: ${notes}\n` : ""}
 We'll contact you soon if any updates are needed.
     `;
-    await sendMessage(userPhone, userMessage);
+    await sendMessage(userPhone, userMessage , businessData.phoneNumberId , accessToken);
 
     // Return confirmation data to the model (so it can respond contextually)
     return {
@@ -282,10 +312,20 @@ We'll contact you soon if any updates are needed.
   } catch (error) {
     console.error("❌ Error in bookFunction:", error);
 
+    const businessData = await getBusinessById(businessId);
+    const accessTokenData = {
+          encrypted : businessData.accessToken,
+          iv:businessData.iv,
+          authTag:businessData.authTag,
+        };
+    const accessToken = decryptToken(accessTokenData);//decryptToken(business.whatsapp.accessToken);
+
     // Send user error message
     await sendMessage(
       userPhone,
-      "⚠️ Sorry, something went wrong while confirming your booking. Please try again shortly."
+      "⚠️ Sorry, something went wrong while confirming your booking. Please try again shortly.",
+      businessData.phoneNumberId , accessToken
+      
     );
 
     return {

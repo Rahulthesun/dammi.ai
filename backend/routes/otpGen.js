@@ -2,7 +2,7 @@
 import axios from 'axios';
 import express from 'express';
 import {encrypt , decrypt} from '../services/encrypt.js'
-import { supabase } from '../../backend/lib/supabaseClient.js';
+import { supabase } from '../backend/lib/supabaseClient.js';
 
 const router = express.Router();
 const encryptionKey = process.env.ENCRYPTION_KEY;

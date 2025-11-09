@@ -101,16 +101,6 @@ async function handleIncomingMessage(message, messageData) {
     };
     const accessToken = decryptToken(accessTokenData);//decryptToken(business.whatsapp.accessToken);
 
-    const intent= await detectIntent(messageText)
-    if (intent === "book") {
-      
-    await bookFunction(customerPhone, messageText, business, phoneNumberId, accessToken);
-    return;
-  }
-
-
-   
-
     console.log(`📩 Message from ${customerPhone} to ${business.businessName} - ${business.adminPhone}: ${messageText}`);
 
     // Query this business's data
@@ -135,7 +125,7 @@ async function handleIncomingMessage(message, messageData) {
       const context = relevantChunks
         .map((c, i) => `Context ${i + 1}:\n${c.text}`)
         .join('\n\n');
-      responseText = await generateAnswer(messageText, context , business?.businessName , customerPhone);
+      responseText = await generateAnswer(messageText, context , business?.businessName , customerPhone , business?.businessId);
     }
 
     console.log(responseText);
@@ -144,19 +134,56 @@ async function handleIncomingMessage(message, messageData) {
     console.log(business.accessToken);
     
     // Send message using THEIR authorized token
-    await sendMessage(
+    if (responseText) {
+      await sendMessage(
       customerPhone,
       responseText,
       business.phoneNumberId,
       accessToken
-    );
+      );
+      addMessage(business.phoneNumber, "AI" , responseText);
 
-    addMessage(business.phoneNumber, "AI" , responseText);
+    }
+    
+    
 
   } catch (error) {
     console.error('❌ Error handling message:', error);
   }
 }
+// ✅ Send message
+export async function sendMessage(to, text, phoneNumberId, accessToken) {
+  try {
+    const response = await axios.post(
+      `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, //This is business phone number id
+      {
+        messaging_product: 'whatsapp',
+        to,
+        type: 'text',
+        text: { body: text },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    console.log('✅ Message sent');
+    
+  } catch (error) {
+    console.error('❌ Error sending message:', error.response?.data || error.message);
+  }
+}
+
+export default router;
+
+
+/*
+
+
+
+
 async function detectIntent(message) {
   const bookingKeywords = ["book", "reserve", "schedule", "appointment", "slot"];
   const lower = message.toLowerCase();
@@ -167,6 +194,9 @@ async function detectIntent(message) {
 
 }
  const bookingSessions = new Map(); //need to switch this to a db storing sessions in the future
+
+
+
 
 async function bookFunction(userPhone, messageText, business, phoneNumberId, accessToken) {
   try {
@@ -253,29 +283,6 @@ ${summary}
   }
 }
 
-// ✅ Send message
-async function sendMessage(to, text, phoneNumberId, accessToken) {
-  try {
-    const response = await axios.post(
-      `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, //This is business phone number id
-      {
-        messaging_product: 'whatsapp',
-        to,
-        type: 'text',
-        text: { body: text },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-    console.log('✅ Message sent');
-    
-  } catch (error) {
-    console.error('❌ Error sending message:', error.response?.data || error.message);
-  }
-}
 
-export default router;
+
+*/
